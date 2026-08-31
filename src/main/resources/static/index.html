@@ -3,67 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tutor Socrático de POO</title>
+    <title>Tutor Socrático</title>
     <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify: sanea el HTML generado por Markdown antes de inyectarlo (anti-XSS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+    <!-- Intercepta marked.parse para sanear con DOMPurify (debe ir tras marked y DOMPurify) -->
+    <script src="js/seguridad.js"></script>
     <!-- Ace Editor para el entorno de programación -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body>
+<body class="theme-github-dark">
+
+<!-- PANTALLA DE LOGIN -->
+<div id="pantalla-login">
+    <div class="login-box" style="max-width: 500px; text-align: center;">
+        <img src="logo-uma.png" alt="Logo UMA" class="login-logo">
+        <h2 style="color: #f85149;">Acceso Restringido</h2>
+        <p style="color: #c9d1d9; font-size: 0.95rem; line-height: 1.5; margin: 20px 0;">
+            El Tutor Socrático está integrado exclusivamente con la plataforma universitaria.
+            <br><br>
+            <strong>Por favor, entra a la aplicación haciendo clic en el enlace oficial dentro de tu asignatura en el Campus Virtual (Moodle).</strong>
+        </p>
+        <div style="margin-top: 30px; border-top: 1px solid #30363d; padding-top: 20px;">
+            <a href="javascript:void(0)" onclick="location.reload()" style="color: #58a6ff; font-size: 0.85rem; text-decoration: none;">¿Ya estás en Moodle? Reintentar</a>
+            <br><br>
+            <span style="font-size: 0.75rem; color: #8b949e;">¿Eres docente o administrador? <a href="javascript:void(0)" onclick="mostrarLoginManual()" style="color: #8b949e; text-decoration: underline;">Acceso manual</a></span>
+        </div>
+    </div>
+</div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
     <div class="logo-container">
         <img src="logo-uma.png" alt="Logo UMA" class="logo-uma">
-        <h2>Tutor POO</h2>
+        <h2>Tutor IA</h2>
     </div>
 
-    <button class="btn-ejercicio" onclick="abrirModal()">
-        + Generar Ejercicio
+    <button class="btn-ejercicio" onclick="abrirModalReto()" style="background: var(--primary); color: #06131f; font-weight: 700; box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 45%, transparent);">
+        🚀 Modo Reto / Ejercicio
+    </button>
+    <button class="btn-ejercicio" onclick="generarApuntesRepaso()" style="background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: var(--primary); color: var(--primary);">
+        📥 Apuntes de Repaso IA
+    </button>
+    <button class="btn-ejercicio" onclick="abrirModalValidador()" style="background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: var(--primary); color: var(--primary);">
+        📝 Validador de Apuntes
     </button>
 
-    <div class="section-title" style="margin-top: 25px;">Líneas de Conocimiento</div>
+    <div class="section-title" style="margin-top: 15px;">Conocimientos de la Asignatura</div>
     <ul class="topic-list" id="lista-temas">
         <li class="topic-item general-topic active" data-file="General" onclick="seleccionarTema(this)">
             🌐 Todo el temario
         </li>
-        <li class="topic-item" data-file="Sesion-1-Programacion-Orientada-a-Objetos.pdf" onclick="seleccionarTema(this)">
-            1. Introducción a POO
-        </li>
-        <li class="topic-item" data-file="Sesion-2-Objetos-responsabilidades-y-colaboracion-2.pdf" onclick="seleccionarTema(this)">
-            2. Objetos y Colaboración
-        </li>
-        <li class="topic-item" data-file="Sesion32-Referencias-a-objetos-2.pdf" onclick="seleccionarTema(this)">
-            3. Referencias
-        </li>
-        <li class="topic-item" data-file="Sesion42-Informacion-compartida-entre-objetos-2.pdf" onclick="seleccionarTema(this)">
-            4. Info. Compartida
-        </li>
-        <li class="topic-item" data-file="GrupoASesion5-Herencia-y-Polimorfismo-Especializacion-y-Comportamiento-2.pdf" onclick="seleccionarTema(this)">
-            5. Herencia y Polimorfismo
-        </li>
-        <li class="topic-item" data-file="InterfacesAbstraccion.pdf" onclick="seleccionarTema(this)">
-            6. Interfaces y Abstracción
-        </li>
-        <li class="topic-item" data-file="Sesion7-Excepciones-Gestion-de-errores-como-parte-del-diseno-2.pdf" onclick="seleccionarTema(this)">
-            7. Excepciones
-        </li>
-        <li class="topic-item" data-file="11a-Colecciones-y-Genericos-2.pdf" onclick="seleccionarTema(this)">
-            8. Colecciones y Genéricos
-        </li>
-        <li class="topic-item" data-file="11b-Gestion-Avanzada-de-Datos-y-Ordenacion-2.pdf" onclick="seleccionarTema(this)">
-            9. Ordenación Avanzada
-        </li>
-        <li class="topic-item" data-file="Sesion-Entrada-salida-2.pdf" onclick="seleccionarTema(this)">
-            10. Entrada y Salida
+    </ul>
+
+    <div class="section-title" style="margin-top: 18px; display: flex; align-items: center; gap: 6px;">
+        <span>🎒 Mis Conocimientos</span>
+    </div>
+    <ul class="topic-list" id="lista-mis-conocimientos">
+        <li class="texto-vacio-mini" style="font-size: 0.75rem; color: var(--text-muted); padding: 4px 8px; list-style: none;">
+            Aún no has guardado apuntes propios.
         </li>
     </ul>
-    
-    <div style="font-size: 0.7rem; color: #8b949e; text-align: center;">
+
+    <div style="font-size: 0.7rem; color: #8b949e; text-align: center; margin-bottom: 5px;">
         Desarrollado por Álvaro R. Samper
+    </div>
+    <div style="font-size: 0.65rem; color: #8b949e; text-align: center; line-height: 1.3; margin-bottom: 15px; padding: 0 10px; opacity: 0.85;">
+        Este es un tutor socrático basado en un modelo de lenguaje. Aunque para ayudarte <strong>nunca va a mejorar a tu profesor</strong>.
     </div>
 </div>
 
@@ -78,6 +88,9 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
                 Reiniciar
             </button>
+            <button class="btn-reiniciar" onclick="cerrarSesion()" title="Cerrar sesión">
+                Cerrar sesión
+            </button>
         </div>
     </div>
 
@@ -88,8 +101,18 @@
                 <div id="mensajes">
                     <div class="mensaje-wrapper bot-wrapper">
                         <div class="mensaje bot">
-                            <p>¡Hola! Soy tu <strong>Tutor Socrático de POO</strong>.</p>
-                            <p>He cargado todos tus apuntes oficiales. Selecciona un tema en la barra lateral para centrar nuestro estudio, o pídeme generar un ejercicio práctico.</p>
+                            <div style="display: inline-flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--primary) 20%, transparent); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #ffffff; margin-bottom: 14px;">
+                                <span class="status-dot" style="background: var(--primary); box-shadow: 0 0 10px var(--primary);"></span>
+                                IA Pedagógica Conectada
+                            </div>
+                            <h3 style="margin-top: 0; color: #ffffff; font-size: 1.25rem; border-bottom: none; padding-bottom: 0;">¡Bienvenido/a al Tutor Socrático! 💡</h3>
+                            <p style="color: var(--text-main); font-size: 1rem; line-height: 1.6;">Estoy sincronizado con el temario y los apuntes oficiales de tu asignatura. Mi objetivo no es solo darte respuestas directas, sino guiarte paso a paso para que domines cada concepto de forma profunda y activa.</p>
+                            <div style="margin-top: 18px; padding: 14px 18px; background: color-mix(in srgb, var(--primary) 10%, rgba(0,0,0,0.3)); border-radius: 12px; border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--border-color)); display: flex; flex-direction: column; gap: 8px;">
+                                <span style="font-weight: 600; color: var(--primary); font-size: 0.9rem;">🚀 ¿Cómo empezar?</span>
+                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Selecciona un tema en la barra lateral izquierda para enfocar el estudio.</span>
+                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Pulsa en <strong>"+ Generar Ejercicio"</strong> para ponerte a prueba con un reto interactivo.</span>
+                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Pide tus <strong>"Apuntes de Repaso IA"</strong> para obtener un resumen estructurado al instante.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -104,17 +127,6 @@
             </div>
         </div>
 
-        <div id="editor-panel">
-            <div id="editor-header">
-                <span style="font-weight: 600; font-size: 0.95rem; color: #c9d1d9;">📝 Entorno de Programación Java</span>
-                <div style="display: flex; gap: 10px;">
-                   <button class="btn-terminar" onclick="corregirEjercicio()">✅ Terminar</button>
-                   <button class="btn-pista" onclick="pedirPista()">💡 Dame una pista</button>
-                   <button class="btn-reiniciar" onclick="salirEjercicio()">❌ Salir</button>
-                </div>
-            </div>
-            <div id="editor"></div>
-        </div>
     </div>
 </div>
 
@@ -149,6 +161,301 @@
     </div>
 </div>
 
+<!-- MODAL DE COMENTARIO VALORACIÓN NEGATIVA -->
+<div id="modal-val-neg" class="modal-overlay">
+    <div class="modal-content-card" style="max-width: 500px;">
+        <div class="modal-header-bar">
+            <h2>👎 ¿Cómo podemos mejorar?</h2>
+            <button class="btn-cerrar-modal" onclick="cerrarModalValNeg()">&times;</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+            Tu feedback nos ayuda a calibrar al tutor. Indícanos brevemente qué ha fallado o qué echas en falta en esta respuesta:
+        </p>
+        <textarea id="texto-val-neg" rows="3" placeholder="Ej: Me gustaría un ejemplo de código o una explicación más teórica..." style="width: 100%; padding: 12px; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: inherit; resize: vertical; box-sizing: border-box; margin-bottom: 20px;"></textarea>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn-cancel" onclick="cerrarModalValNeg()">Omitir</button>
+            <button class="btn-confirm" onclick="enviarValoracionNegativaComentario()">Enviar Feedback</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL APUNTES DE REPASO -->
+<div id="modal-repaso" class="modal-overlay">
+    <div class="modal-content-card">
+        <div class="modal-header-bar">
+            <h2>📥 Apuntes de Repaso Socrático</h2>
+            <button class="btn-cerrar-modal" onclick="cerrarModalRepaso()">&times;</button>
+        </div>
+        <div id="contenido-repaso-carga" style="text-align: center; padding: 40px 0;">
+            <div class="radar-spinner"></div>
+            <p style="color: var(--text-muted); font-weight: 500;">La IA está estructurando y sintetizando los conceptos clave abordados en esta sesión...</p>
+        </div>
+        <div id="contenido-repaso-listo" style="display: none;">
+            <div id="repaso-render" class="apuntes-cuerpo"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
+                <button class="btn-cancel" onclick="cerrarModalRepaso()">Cerrar</button>
+                <button class="btn-ejercicio" onclick="descargarRepasoMd()">📄 Descargar Markdown (.md)</button>
+                <button class="btn-confirm" onclick="imprimirRepasoPdf()">🖨 Imprimir / Guardar en PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- ============ MODO RETO / MICROHITOS ============ -->
+
+    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL RETO -->
+    <div id="modal-reto" class="modal-overlay">
+        <div class="modal-content-card" style="max-width: 640px;">
+            <div class="modal-header-bar">
+                <h2>🚀 Modo Reto / Ejercicio</h2>
+                <button class="btn-cerrar-modal" onclick="cerrarModalReto()">&times;</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 6px;">
+                Elige cómo quieres empezar tu reto. El tutor te guiará por microhitos sin darte la solución.
+            </p>
+            <div class="reto-opciones">
+                <div class="reto-opcion" onclick="retoElegirSubir()">
+                    <span class="icono">📤</span>
+                    <span class="titulo">Subir ejercicio propio</span>
+                    <span class="sub">Pega tu enunciado y la IA lo divide en hitos</span>
+                </div>
+                <div class="reto-opcion" onclick="retoElegirCrear()">
+                    <span class="icono">✨</span>
+                    <span class="titulo">Crear con IA</span>
+                    <span class="sub">Elige tema y dificultad</span>
+                </div>
+                <div class="reto-opcion" onclick="retoElegirPropuestos()">
+                    <span class="icono">📋</span>
+                    <span class="titulo">Ejercicios Propuestos</span>
+                    <span class="sub">Retos publicados por el profesor</span>
+                </div>
+            </div>
+
+            <div class="reto-carpeta">
+                <div>
+                    <div style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">📁 Carpeta de trabajo (IDE)</div>
+                    <div class="reto-carpeta-estado" id="reto-carpeta-estado">Sin vincular. Necesaria para "Recargar porcentaje".</div>
+                </div>
+                <button class="btn-ejercicio" onclick="retoVincularCarpeta()">Seleccionar carpeta</button>
+            </div>
+
+            <!-- Sub-formularios (se muestran según la opción elegida) -->
+            <div id="reto-form-crear" style="display:none; margin-top: 18px;">
+                <div class="form-group">
+                    <label>Tema:</label>
+                    <select id="reto-select-tema"></select>
+                </div>
+                <div class="form-group">
+                    <label>Dificultad:</label>
+                    <select id="reto-select-dificultad">
+                        <option value="Fácil">Básico (Fácil)</option>
+                        <option value="Media" selected>Intermedio (Media)</option>
+                        <option value="Difícil">Avanzado (Examen)</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
+                    <button class="btn-confirm" onclick="retoCrearConIa()">Generar reto</button>
+                </div>
+            </div>
+
+            <div id="reto-form-subir" style="display:none; margin-top: 18px;">
+                <div class="form-group">
+                    <label>Título:</label>
+                    <input type="text" id="reto-subir-titulo" placeholder="Ej: Lista enlazada en C" style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box;">
+                </div>
+                <div class="form-group">
+                    <label>Enunciado:</label>
+                    <textarea id="reto-subir-enunciado" rows="5" placeholder="Pega aquí el enunciado de tu ejercicio..." style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box; resize:vertical;"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
+                    <button class="btn-confirm" onclick="retoSubirPropio()">Empezar reto</button>
+                </div>
+            </div>
+
+            <div id="reto-form-propuestos" style="display:none; margin-top: 18px;">
+                <div id="reto-lista-propuestos" style="max-height: 300px; overflow-y: auto;">
+                    <p class="texto-vacio" style="color: var(--text-muted);">Cargando…</p>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
+                </div>
+            </div>
+
+            <div id="reto-cargando" style="display:none; text-align:center; padding: 24px 0;">
+                <div class="radar-spinner"></div>
+                <p style="color: var(--text-muted);" id="reto-cargando-texto">Preparando tu reto…</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY PANTALLA DE EJECUCIÓN (MODO ENFOQUE) -->
+    <div id="pantalla-reto">
+        <div class="reto-topbar">
+            <button class="btn-salir-reto" onclick="salirReto()">← Salir</button>
+            <span class="reto-titulo" id="reto-titulo-activo">Reto</span>
+            <span class="reto-cronometro" id="reto-cronometro">00:00</span>
+        </div>
+
+        <aside class="reto-hitos">
+            <h3>Microhitos</h3>
+            <div id="reto-hitos-lista"></div>
+        </aside>
+
+        <main class="reto-chat">
+            <div class="reto-mensajes" id="reto-mensajes"></div>
+            <div class="reto-input-area">
+                <textarea id="reto-input" rows="1" placeholder="Pregunta al tutor sobre el hito actual… (Shift + Enter = nueva línea)" onkeydown="retoManejarEnter(event)"></textarea>
+                <button class="btn-enviar" onclick="retoEnviarMensaje()">Enviar</button>
+            </div>
+        </main>
+
+        <aside class="reto-indep">
+            <h3 title="Indicadores orientativos, no una calificación">Tu progreso</h3>
+            <div class="medidor-anillo" id="reto-medidor" title="Autonomía: cuánto lo has resuelto sin depender de la ayuda del tutor">
+                <svg width="180" height="180" viewBox="0 0 180 180">
+                    <circle cx="90" cy="90" r="78" fill="none" stroke="var(--border-color)" stroke-width="14"/>
+                    <circle id="reto-anillo-progreso" cx="90" cy="90" r="78" fill="none" stroke="var(--primary)"
+                            stroke-width="14" stroke-linecap="round"
+                            stroke-dasharray="490" stroke-dashoffset="490" style="transition: stroke-dashoffset 0.8s ease, stroke 0.8s ease;"/>
+                </svg>
+                <div class="valor">
+                    <span class="num" id="reto-indep-num">0%</span>
+                    <span class="lbl">autonomía</span>
+                </div>
+            </div>
+            <div class="medidor-desglose" id="reto-indep-desglose">
+                Pulsa <b>Recargar</b> tras escribir código para evaluar tu progreso.
+            </div>
+            <!-- Autoría: métrica SEPARADA (código propio vs copiado del tutor). Orientativa. -->
+            <div class="medidor-autoria" id="reto-autoria-bloque" style="display:none; margin-top:14px;"
+                 title="Autoría: qué parte del código entregado es tuya frente a fragmentos que escribió el tutor. Indicador orientativo, no una acusación de copia.">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.8rem; color:var(--text-muted);">
+                    <span>✍️ Autoría del código</span>
+                    <b id="reto-autoria-num" style="color:var(--text-main);">—</b>
+                </div>
+                <div style="height:8px; background:var(--border-color); border-radius:6px; overflow:hidden; margin-top:5px;">
+                    <div id="reto-autoria-barra" style="height:100%; width:0; background:#3fb950; transition:width 0.8s ease, background 0.8s ease;"></div>
+                </div>
+            </div>
+            <div class="comentario-eval" id="reto-comentario-eval" style="display:none;"></div>
+            <button class="btn-recargar" onclick="retoRecargarPorcentaje()" id="reto-btn-recargar">
+                🔄 Recargar porcentaje
+            </button>
+        </aside>
+
+        <footer class="reto-footer" id="reto-footer">
+            <span class="punto"></span>
+            <span id="reto-footer-texto">Carpeta del IDE sin vincular</span>
+        </footer>
+
+        <!-- Cartelito de ética IA (fijo, sutil, abajo a la izquierda) -->
+        <div class="etica-ia" title="Recuerda: la IA es un apoyo, no sustituye a tu profesor">
+            🤖 Este chat está generado por IA, la visión de tu profesor siempre será mejor.
+        </div>
+    </div>
+
+    <!-- PANTALLA DE ÉXITO -->
+    <div id="pantalla-exito">
+        <span class="emoji">🎉</span>
+        <h1>¡Felicidades!</h1>
+        <div class="sub">Has completado todos los microhitos del reto.</div>
+        <div class="indep-final" id="exito-indep">0%</div>
+        <div class="sub">Porcentaje de Independencia logrado</div>
+        <div class="sub" id="exito-tiempo" style="margin-top:8px;"></div>
+        <button class="btn-confirm" onclick="cerrarPantallaExito()">Volver al inicio</button>
+    </div>
+
+    <!-- MODAL VALIDADOR DE APUNTES -->
+    <div id="modal-validador" class="modal-overlay">
+        <div class="modal-content-card" style="max-width: 720px;">
+            <div class="modal-header-bar">
+                <h2>📝 Validador de Apuntes</h2>
+                <button class="btn-cerrar-modal" onclick="cerrarModalValidador()">&times;</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 16px;">
+                Sube un archivo (PDF/TXT) o pega tus apuntes. La IA los comparará con el temario oficial del profesor.
+                Si te convence, guárdalos en "Mis Conocimientos" y el tutor los usará solo para ti.
+            </p>
+
+            <div class="form-group">
+                <label>Título de los apuntes:</label>
+                <input type="text" id="validador-titulo" placeholder="Ej: Mis notas de Herencia y Polimorfismo"
+                       style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box;">
+            </div>
+
+            <div class="form-group">
+                <label>Archivo (PDF o TXT):</label>
+                <input type="file" id="validador-archivo" accept=".pdf,.txt,application/pdf,text/plain"
+                       onchange="validadorArchivoElegido(this)"
+                       style="width:100%; color: var(--text-muted); font-size:0.85rem;">
+                <div id="validador-archivo-nombre" style="font-size:0.78rem; color: var(--text-muted); margin-top:4px;"></div>
+            </div>
+
+            <div class="form-group">
+                <label>…o pega tu texto:</label>
+                <textarea id="validador-texto" rows="5" placeholder="Pega aquí tus apuntes…"
+                          style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box; resize:vertical;"></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="cerrarModalValidador()">Cancelar</button>
+                <button class="btn-confirm" id="btn-validar-apunte" onclick="validarApunte()">🔍 Validar</button>
+            </div>
+
+            <div id="validador-cargando" style="display:none; text-align:center; padding: 20px 0;">
+                <div class="radar-spinner"></div>
+                <p style="color: var(--text-muted);">La IA está comparando tus apuntes con el temario oficial…</p>
+            </div>
+
+            <div id="validador-resultado" style="display:none; margin-top: 18px;">
+                <div class="section-title" style="margin-bottom: 10px;">Resultado de la validación</div>
+                <div id="validador-feedback" class="apuntes-cuerpo"></div>
+                <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:16px;">
+                    <button class="btn-confirm" onclick="guardarApunte()" style="background:#3fb950; border-color:#3fb950;">
+                        💾 Guardar en Mis Conocimientos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST DE ESTANCAMIENTO (flotante, fuera de la burbuja del chat) -->
+    <div id="toast-estancamiento" class="toast-estancamiento" role="alert" aria-live="polite">
+        <div class="toast-icono">🚦</div>
+        <div class="toast-cuerpo">
+            <div class="toast-texto" id="toast-estancamiento-texto">Oye, estoy viendo que estás estancado, ¿por qué no avisas por tutoría a tu profesor?</div>
+        </div>
+        <button class="toast-cerrar" onclick="cerrarToastEstancamiento()" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <!-- BOTÓN Y MODAL DE AYUDA -->
+    <button id="btn-help-floating" onclick="abrirModalAyuda()" title="¿Cómo usar el Tutor Socrático?">
+        ?
+    </button>
+    <div id="modal-ayuda" class="modal-overlay" style="display: none; z-index: 2000;">
+        <div class="modal-content-card" style="max-width: 550px; text-align: left; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--primary);">🤖 ¿Cómo usar el Tutor Socrático?</h3>
+                <button onclick="cerrarModalAyuda()" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
+            </div>
+            <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
+                <p>¡Bienvenido! Este tutor no te va a dar el código resuelto, sino que te guiará para que lo descubras tú mismo.</p>
+                <ul style="padding-left: 20px; margin-bottom: 20px; color: var(--text-muted);">
+                    <li style="margin-bottom: 8px;"><strong>💬 Chat General:</strong> Pregunta cualquier duda sobre teoría. El tutor consultará los apuntes oficiales de tu profesor.</li>
+                    <li style="margin-bottom: 8px;"><strong>🚀 Modo Reto:</strong> Pulsa este botón para entrar en un modo de enfoque donde resolverás ejercicios paso a paso (microhitos).</li>
+                    <li style="margin-bottom: 8px;"><strong>📁 Conecta tu IDE:</strong> En el Modo Reto, puedes vincular tu carpeta local para que la IA lea tu código y te asista sin tener que copiar y pegar.</li>
+                    <li style="margin-bottom: 8px;"><strong>🚨 Detector de Estancamiento:</strong> Si te atascas, la IA lo notará y cambiará su estrategia para darte pistas más directas.</li>
+                </ul>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+                    <em>Recuerda: Ante cualquier duda arquitectónica profunda, ¡habla con tu profesor!</em>
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script src="js/app.js"></script>
+    <script src="js/reto.js"></script>
 </body>
 </html>

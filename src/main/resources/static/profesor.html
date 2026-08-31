@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Profesor · Tutor Socrático</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify: sanea el HTML generado por Markdown antes de inyectarlo (anti-XSS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+    <!-- Intercepta marked.parse para sanear con DOMPurify (debe ir tras marked y DOMPurify) -->
+    <script src="js/seguridad.js"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="body-profesor theme-github-dark">
+
+<div id="panel-profesor">
+    <div id="header">
+        <div class="header-title">
+            <img src="logo-uma.png" alt="Logo UMA" class="logo-uma">
+            <h1 id="titulo-profesor">Panel del Profesor</h1>
+        </div>
+        <div class="status-text" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn-confirm" onclick="abrirModalConfiguracion()" style="padding: 8px 16px; font-weight: 500;">
+                ⚙ Configurar asignatura
+            </button>
+            <button class="btn-reiniciar" onclick="cerrarSesion()" title="Cerrar sesión">
+                Cerrar sesión
+            </button>
+        </div>
+    </div>
+
+    <div id="contenido-profesor">
+        <div class="fila-tarjetas">
+            <div class="tarjeta-metrica">
+                <div class="metrica-valor" id="metrica-total">–</div>
+                <div class="metrica-etiqueta">Consultas totales</div>
+            </div>
+            <div class="tarjeta-metrica">
+                <div class="metrica-valor" id="metrica-alumnos">–</div>
+                <div class="metrica-etiqueta">Alumnos activos</div>
+            </div>
+            <div class="tarjeta-metrica" style="cursor: pointer; border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, rgba(22,27,34,0.85));" onclick="abrirRadarDocente()">
+                <div class="metrica-valor" style="font-size: 1.8rem; display: flex; align-items: center; gap: 8px;">📡 Radar Docente</div>
+                <div class="metrica-etiqueta" style="color: #fff; font-weight: 600;">Informe de clase y alumnos estancados</div>
+            </div>
+        </div>
+
+        <div class="bloque-panel">
+            <div class="section-title">Preguntas por tema</div>
+            <div id="grafico-temas"><p class="texto-vacio">Cargando…</p></div>
+        </div>
+
+        <div class="bloque-panel">
+            <div class="section-title">Perfil de aprendizaje por alumno</div>
+            <div class="leyenda-perfil">
+                <span><i class="leyenda-color teorico"></i> Teórico</span>
+                <span><i class="leyenda-color practico"></i> Práctico</span>
+            </div>
+            <div id="grafico-perfiles"><p class="texto-vacio">Cargando…</p></div>
+        </div>
+
+
+        <div class="bloque-panel">
+            <div class="section-title">🚀 Ejercicios Propuestos (Modo Reto)</div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 16px;">
+                Publica un reto con microhitos desglosados. Aparecerá al instante en la pestaña "Ejercicios Propuestos" de los alumnos.
+            </p>
+            <form id="form-propuesto" onsubmit="publicarPropuesto(event)">
+                <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+                    <input type="text" id="prop-titulo" placeholder="Título del ejercicio" required
+                           style="padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff;">
+                    <select id="prop-dificultad" style="padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff;">
+                        <option value="Fácil">Fácil</option>
+                        <option value="Media" selected>Media</option>
+                        <option value="Difícil">Difícil</option>
+                    </select>
+                    <input type="text" id="prop-tema" placeholder="Tema (opcional)"
+                           style="padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff;">
+                </div>
+                <textarea id="prop-enunciado" rows="4" placeholder="Enunciado del ejercicio…" required
+                          style="width:100%; padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff; box-sizing:border-box; resize:vertical; margin-bottom:14px;"></textarea>
+
+                <label style="display:block; font-weight:600; color:#c9d1d9; margin-bottom:8px;">Microhitos</label>
+                <div id="prop-hitos"></div>
+                <button type="button" class="btn-ejercicio" onclick="agregarFilaHito()" style="margin-top:6px;">+ Añadir microhito</button>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+                    <button type="submit" class="btn-confirm" id="btn-publicar-prop">Publicar ejercicio</button>
+                </div>
+                <p id="estado-prop" style="margin-top:8px; font-size:0.9rem; text-align:right; color:#8b949e;"></p>
+            </form>
+        </div>
+
+        <div class="bloque-panel">
+            <div class="section-title">📡 Radar Docente · Seguimiento de retos</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin:0;">
+                    Qué alumnos han completado cada ejercicio propuesto, en cuánto tiempo y con qué independencia media.
+                </p>
+                <button class="btn-ejercicio" onclick="cargarRadarDocente()">↻ Actualizar</button>
+            </div>
+            <div id="radar-docente"><p class="texto-vacio">Cargando…</p></div>
+        </div>
+
+        <div class="bloque-panel">
+            <div class="section-title">Consultas de los alumnos</div>
+            <div class="fila-filtros">
+                <input type="text" id="filtro-alumno" placeholder="ID de alumno">
+                <select id="filtro-tema">
+                    <option value="">Todos los temas</option>
+                </select>
+                <label class="filtro-fecha">Desde <input type="date" id="filtro-desde"></label>
+                <label class="filtro-fecha">Hasta <input type="date" id="filtro-hasta"></label>
+                <button class="btn-confirm" onclick="aplicarFiltros()">Aplicar</button>
+                <button class="btn-ejercicio" onclick="descargarInforme()">⬇ Descargar informe CSV</button>
+            </div>
+
+            <div class="tabla-scroll">
+                <table id="tabla-consultas">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Alumno</th>
+                            <th>Tema</th>
+                            <th>Tipo</th>
+                            <th>Pregunta</th>
+                            <th>Respuesta</th>
+                            <th>Val.</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla">
+                        <tr><td colspan="8" class="texto-vacio">Cargando…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-configuracion" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; width: 90%; max-width: 750px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary);">⚙ Configuración de la Asignatura</h2>
+            <button onclick="cerrarModalConfiguracion()" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <form id="form-asignatura-modal" onsubmit="guardarConfiguracionModal(event)">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #c9d1d9;">Título de la asignatura</label>
+                <input type="text" id="input-titulo-modal" placeholder="Ej: Programación Orientada a Objetos" style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #fff; box-sizing: border-box;" required>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #c9d1d9;">📚 Conocimientos del tutor (Apuntes PDF)</label>
+                    <div style="background: #0d1117; border: 2px dashed #30363d; border-radius: 8px; padding: 20px; text-align: center;">
+                        <input type="file" id="input-apuntes-modal" accept="application/pdf" multiple style="display: none;" onchange="actualizarNombreArchivos(this)">
+                        <button type="button" onclick="document.getElementById('input-apuntes-modal').click()" class="btn-ejercicio" style="margin-bottom: 10px;">Seleccionar PDF</button>
+                        <p id="texto-archivos-seleccionados" style="margin: 0; font-size: 0.8rem; color: #8b949e;">No hay archivos nuevos seleccionados</p>
+                    </div>
+                    <div id="lista-archivos-subidos" style="margin-top: 10px; max-height: 110px; overflow-y: auto;"></div>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #c9d1d9;">🤖 Prompt para el tutor socrático</label>
+                    <textarea id="input-prompt-modal" rows="6" placeholder="Instrucciones pedagógicas y directrices para la IA..." style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #fff; box-sizing: border-box; resize: vertical;" required></textarea>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 10px; color: #c9d1d9;">🎨 Tema visual de la asignatura (IDE clásico)</label>
+                <select id="select-tema-ide" onchange="previsualizarTemaIde(this.value)"
+                        style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #fff; box-sizing: border-box;">
+                    <option value="github-dark">GitHub Dark</option>
+                    <option value="dracula">Dracula</option>
+                    <option value="monokai">Monokai</option>
+                    <option value="one-dark">One Dark</option>
+                </select>
+                <p style="margin: 8px 0 0; font-size: 0.8rem; color: #8b949e;">
+                    Toda la interfaz (fondo, chat, sidebar, textos) adoptará la paleta exacta de este IDE, para ti y para tus alumnos.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 4px; color: #c9d1d9;">🚦 Sensibilidad de Estancamiento</label>
+                <p style="margin: 0 0 12px; font-size: 0.8rem; color: #8b949e;">
+                    Nº de iteraciones sobre el mismo tema/hito antes de avisar al alumno. Menos = más sensible.
+                </p>
+                <div class="sensibilidad-wrap">
+                    <input type="range" id="input-sensibilidad-modal" min="4" max="8" step="1" value="5"
+                           oninput="actualizarValorSensibilidad(this.value)">
+                    <span class="sensibilidad-valor" id="valor-sensibilidad-modal">5 preguntas</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #30363d; padding-top: 15px;">
+                <button type="button" onclick="cerrarModalConfiguracion()" class="btn-reiniciar">Cancelar</button>
+                <button type="submit" class="btn-confirm" id="btn-guardar-modal">Guardar configuración</button>
+            </div>
+            <p id="estado-asignatura-modal" style="margin-top: 10px; font-size: 0.9rem; color: #8b949e; text-align: right;"></p>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL RADAR DOCENTE -->
+<div id="modal-radar" class="modal-overlay">
+    <div class="modal-content-card" style="max-width: 850px;">
+        <div class="modal-header-bar">
+            <h2 id="titulo-modal-radar">📡 Radar Docente</h2>
+            <button class="btn-cerrar-modal" onclick="cerrarModalRadar()">&times;</button>
+        </div>
+
+        <!-- Selector de las dos opciones principales -->
+        <div id="radar-chooser">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 8px;">¿Qué quieres consultar?</p>
+            <div class="radar-chooser">
+                <button class="radar-chooser-btn" onclick="radarGenerarInforme()">
+                    <span class="ico">📊</span>
+                    <span class="tit">Generar Informe</span>
+                    <span class="sub">Visión general de la clase: puntos ciegos y confusión conceptual (IA).</span>
+                </button>
+                <button class="radar-chooser-btn" onclick="radarAlumnosProblemas()">
+                    <span class="ico">🚦</span>
+                    <span class="tit">Alumnos con Problemas</span>
+                    <span class="sub">Alumnos que han hecho saltar el algoritmo de estancamiento y en qué tema/hito.</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista: Informe de confusión IA -->
+        <div id="contenido-radar-carga" style="display: none; text-align: center; padding: 45px 0;">
+            <div class="radar-spinner"></div>
+            <p style="color: var(--text-muted); font-weight: 500; font-size: 1.05rem;">La IA Pedagógica está escaneando las dudas recientes y diagnosticando patrones conceptuales...</p>
+        </div>
+        <div id="contenido-radar-listo" style="display: none;">
+            <div id="radar-render" class="apuntes-cuerpo"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn-cancel" onclick="volverChooserRadar()">← Volver</button>
+                <button class="btn-confirm" onclick="imprimirRadarPdf()">🖨 Imprimir / Guardar Informe PDF</button>
+            </div>
+        </div>
+
+        <!-- Vista: Listado de alumnos con problemas -->
+        <div id="contenido-problemas" style="display: none;">
+            <div id="tabla-problemas-wrap">
+                <p class="texto-vacio">Cargando…</p>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn-cancel" onclick="volverChooserRadar()">← Volver</button>
+                <button class="btn-ejercicio" onclick="radarAlumnosProblemas()">↻ Actualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/profesor.js"></script>
+<script src="js/retoProfesor.js"></script>
+</body>
+</html>
