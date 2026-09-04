@@ -5,7 +5,9 @@ import es.uma.tfg.tutor_socratico.dto.DetalleEjercicioDTO;
 import es.uma.tfg.tutor_socratico.dto.EjercicioRadarDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionChatReto;
 import es.uma.tfg.tutor_socratico.dto.PeticionCrearEjercicioIa;
+import es.uma.tfg.tutor_socratico.dto.PeticionGenerarMicrohitos;
 import es.uma.tfg.tutor_socratico.dto.PeticionIniciarReto;
+import es.uma.tfg.tutor_socratico.dto.MicrohitoDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionPublicarEjercicio;
 import es.uma.tfg.tutor_socratico.dto.PeticionRecargar;
 import es.uma.tfg.tutor_socratico.dto.PeticionSubirEjercicio;
@@ -21,9 +23,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -60,6 +65,18 @@ public class ControladorReto {
         return servicioReto.subirEjercicio(peticion, auth.getName(), asignaturaDe(session));
     }
 
+    @PostMapping("/subir-archivo")
+    public DetalleEjercicioDTO subirArchivo(@RequestParam("archivo") MultipartFile archivo,
+                                            @RequestParam(value = "titulo", required = false) String titulo,
+                                            @RequestParam(value = "tema", required = false) String tema,
+                                            @RequestParam(value = "lenguaje", required = false) String lenguaje,
+                                            Authentication auth, HttpSession session) {
+        String tit = (titulo != null && !titulo.isBlank()) ? titulo
+                : (archivo != null && archivo.getOriginalFilename() != null
+                    ? archivo.getOriginalFilename().replaceAll("\\.[^.]+$", "") : "Ejercicio subido");
+        return servicioReto.subirEjercicioDesdeArchivo(tit, tema, lenguaje, archivo, auth.getName(), asignaturaDe(session));
+    }
+
     @PostMapping("/iniciar")
     public RespuestaEstadoReto iniciar(@Valid @RequestBody PeticionIniciarReto peticion,
                                        Authentication auth, HttpSession session) {
@@ -78,6 +95,18 @@ public class ControladorReto {
     }
 
     
+
+    @PostMapping("/profesor/extraer-texto")
+    public Map<String, String> extraerTexto(@RequestParam("archivo") MultipartFile archivo) {
+        return Map.of("texto", servicioReto.extraerTextoDeArchivo(archivo));
+    }
+
+    @PostMapping("/profesor/microhitos")
+    public List<MicrohitoDTO> generarMicrohitos(@Valid @RequestBody PeticionGenerarMicrohitos peticion,
+                                                Authentication auth, HttpSession session) {
+        return servicioReto.proponerMicrohitos(peticion.enunciado(), peticion.lenguaje(),
+                asignaturaDe(session), peticion.tema(), auth.getName());
+    }
 
     @PostMapping("/profesor/publicar")
     public RespuestaPublicacion publicar(@Valid @RequestBody PeticionPublicarEjercicio peticion,

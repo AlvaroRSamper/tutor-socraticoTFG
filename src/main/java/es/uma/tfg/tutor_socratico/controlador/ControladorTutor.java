@@ -1,5 +1,6 @@
 package es.uma.tfg.tutor_socratico.controlador;
 
+import es.uma.tfg.tutor_socratico.dto.EstadoRacha;
 import es.uma.tfg.tutor_socratico.dto.Mensaje;
 import es.uma.tfg.tutor_socratico.dto.PeticionChat;
 import es.uma.tfg.tutor_socratico.dto.PeticionEjercicio;
@@ -14,6 +15,8 @@ import es.uma.tfg.tutor_socratico.dto.RespuestaTemas;
 import es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio;
 import es.uma.tfg.tutor_socratico.persistencia.Asignatura;
 import es.uma.tfg.tutor_socratico.persistencia.AsignaturaRepositorio;
+import es.uma.tfg.tutor_socratico.servicio.ServicioConsentimiento;
+import es.uma.tfg.tutor_socratico.servicio.ServicioRacha;
 import es.uma.tfg.tutor_socratico.servicio.ServicioRegistroConsultas;
 import es.uma.tfg.tutor_socratico.servicio.ServicioTutor;
 import org.springframework.security.core.Authentication;
@@ -34,13 +37,18 @@ public class ControladorTutor {
     private final PerfilAprendizajeServicio perfilAprendizajeServicio;
     private final AsignaturaRepositorio asignaturaRepositorio;
     private final ServicioRegistroConsultas servicioRegistroConsultas;
+    private final ServicioRacha servicioRacha;
+    private final ServicioConsentimiento servicioConsentimiento;
 
     public ControladorTutor(ServicioTutor servicioTutor, PerfilAprendizajeServicio perfilAprendizajeServicio,
-                            AsignaturaRepositorio asignaturaRepositorio, ServicioRegistroConsultas servicioRegistroConsultas) {
+                            AsignaturaRepositorio asignaturaRepositorio, ServicioRegistroConsultas servicioRegistroConsultas,
+                            ServicioRacha servicioRacha, ServicioConsentimiento servicioConsentimiento) {
         this.servicioTutor = servicioTutor;
         this.perfilAprendizajeServicio = perfilAprendizajeServicio;
         this.asignaturaRepositorio = asignaturaRepositorio;
         this.servicioRegistroConsultas = servicioRegistroConsultas;
+        this.servicioRacha = servicioRacha;
+        this.servicioConsentimiento = servicioConsentimiento;
     }
 
     @GetMapping("/temas")
@@ -52,6 +60,22 @@ public class ControladorTutor {
         String colorTema = (asig != null && asig.getColorTema() != null) ? asig.getColorTema() : "github-dark";
         String username = (authentication != null) ? authentication.getName() : null;
         return new RespuestaTemas(asignaturaId, temas, titulo, colorTema, username);
+    }
+
+    @PostMapping("/racha")
+    public EstadoRacha registrarRachaDiaria(Authentication authentication, HttpSession session) {
+        return servicioRacha.registrarEntradaDiaria(authentication.getName(), asignaturaDe(session));
+    }
+
+    @GetMapping("/consentimiento")
+    public Map<String, Boolean> estadoConsentimiento(Authentication authentication, HttpSession session) {
+        return Map.of("aceptado", servicioConsentimiento.haAceptado(authentication.getName(), asignaturaDe(session)));
+    }
+
+    @PostMapping("/consentimiento")
+    public Map<String, Boolean> aceptarConsentimiento(Authentication authentication, HttpSession session) {
+        servicioConsentimiento.aceptar(authentication.getName(), asignaturaDe(session));
+        return Map.of("aceptado", true);
     }
 
     @PostMapping("/chat")

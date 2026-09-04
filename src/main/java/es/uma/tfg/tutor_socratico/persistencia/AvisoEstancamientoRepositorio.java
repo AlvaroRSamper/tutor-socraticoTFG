@@ -1,6 +1,5 @@
 package es.uma.tfg.tutor_socratico.persistencia;
 
-import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento.Ambito;
 import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento.Estado;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,6 +11,6 @@ public interface AvisoEstancamientoRepositorio extends JpaRepository<AvisoEstanc
 
     List<AvisoEstancamiento> findByAsignaturaIdAndEstadoOrderByFechaActualizacionDesc(String asignaturaId, Estado estado);
 
-    Optional<AvisoEstancamiento> findFirstByUsernameAndAsignaturaIdAndAmbitoAndTemaAndEstado(
-            String username, String asignaturaId, Ambito ambito, String tema, Estado estado);
+    Optional<AvisoEstancamiento> findFirstByUsernameAndAsignaturaIdAndEstado(
+            String username, String asignaturaId, Estado estado);
 }

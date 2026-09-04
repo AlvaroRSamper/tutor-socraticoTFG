@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tutor Socrático</title>
+    <link rel="icon" type="image/png" href="logo-tutor.png">
     <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- DOMPurify: sanea el HTML generado por Markdown antes de inyectarlo (anti-XSS) -->
@@ -38,9 +39,16 @@
 
 <!-- SIDEBAR -->
 <div id="sidebar">
-    <div class="logo-container">
-        <img src="logo-uma.png" alt="Logo UMA" class="logo-uma">
-        <h2>Tutor IA</h2>
+    <div class="logo-container" style="display:flex; justify-content:flex-start; align-items:center; gap:0;">
+        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; flex-shrink:1;">
+            <img src="logo-uma.png" alt="Logo UMA" class="logo-uma" style="margin:0;">
+            <h2 style="font-size:1.15rem; font-weight:800; line-height:1.2; margin:4px 0 0 0; color:var(--text-main);">Tutor Socrático</h2>
+            <h3 id="titulo-chat" style="font-size:0.95rem; font-weight:500; line-height:1.2; margin:0; color:var(--text-muted); word-break:break-word;">Todo el temario</h3>
+        </div>
+        <div style="position: relative; display: inline-block;">
+            <img id="mascota-cafe" class="mascota-cafe" src="mascota-gif.gif" alt="Mascota" style="display:inline-block; height:95px; margin-left:-25px; margin-right:-20px; margin-top:-15px; margin-bottom:-15px;">
+            <div id="bocadillo-mascota" class="bocadillo-tooltip"></div>
+        </div>
     </div>
 
     <button class="btn-ejercicio" onclick="abrirModalReto()" style="background: var(--primary); color: #06131f; font-weight: 700; box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 45%, transparent);">
@@ -73,25 +81,24 @@
         Desarrollado por Álvaro R. Samper
     </div>
     <div style="font-size: 0.65rem; color: #8b949e; text-align: center; line-height: 1.3; margin-bottom: 15px; padding: 0 10px; opacity: 0.85;">
-        Este es un tutor socrático basado en un modelo de lenguaje. Aunque para ayudarte <strong>nunca va a mejorar a tu profesor</strong>.
+        Este es un tutor socrático basado en un modelo de lenguaje. Para ayudarte nunca va a ser mejor que tu profesor. <strong>¡VE A TUTORÍA!</strong>
     </div>
 </div>
 
 <!-- MAIN AREA -->
 <div id="main-area">
-    <div id="header">
-        <div class="header-title">
-            <h1 id="titulo-chat">Tutor: Todo el temario</h1>
-        </div>
-        <div class="status-text">
-            <button class="btn-reiniciar" onclick="reiniciarChat()" title="Borrar historial y empezar de nuevo">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
-                Reiniciar
-            </button>
-            <button class="btn-reiniciar" onclick="cerrarSesion()" title="Cerrar sesión">
-                Cerrar sesión
-            </button>
-        </div>
+    <!-- Botón hamburguesa (izquierda) -->
+    <button class="floating-header-btn floating-left" onclick="toggleSidebar()" title="Alternar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+
+    <!-- Botón 3 puntitos (derecha) -->
+    <button class="floating-header-btn floating-right" onclick="toggleHeaderMenu(event)" title="Opciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+    </button>
+    <div id="header-dropdown" class="dropdown-menu">
+        <button class="dropdown-item" onclick="reiniciarChat(); toggleHeaderMenu(event)">🔄 Reiniciar chat</button>
+        <button class="dropdown-item" onclick="cerrarSesion(); toggleHeaderMenu(event)">🚪 Cerrar sesión</button>
     </div>
 
     <!-- WORKSPACE SPLIT (Chat | Editor) -->
@@ -268,9 +275,15 @@
                     <label>Enunciado:</label>
                     <textarea id="reto-subir-enunciado" rows="5" placeholder="Pega aquí el enunciado de tu ejercicio..." style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box; resize:vertical;"></textarea>
                 </div>
+                <div class="form-group" style="border-top:1px dashed var(--border-color); padding-top:12px;">
+                    <label>…o sube un archivo (PDF, Markdown o TXT):</label>
+                    <input type="file" id="reto-subir-archivo" accept=".pdf,.md,.markdown,.txt,text/markdown,text/plain,application/pdf" style="width:100%; color:#c9d1d9;">
+                    <small style="color: var(--text-muted); display:block; margin-top:4px;">Se extraerá el enunciado del archivo. El título es opcional (si lo dejas vacío, se usa el nombre del archivo).</small>
+                </div>
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
-                    <button class="btn-confirm" onclick="retoSubirPropio()">Empezar reto</button>
+                    <button class="btn-ejercicio" onclick="retoSubirArchivo()">Subir archivo</button>
+                    <button class="btn-confirm" onclick="retoSubirPropio()">Empezar con el texto</button>
                 </div>
             </div>
 
@@ -345,7 +358,7 @@
             </button>
         </aside>
 
-        <footer class="reto-footer" id="reto-footer">
+        <footer class="reto-footer" id="reto-footer" onclick="retoVincularCarpeta()">
             <span class="punto"></span>
             <span id="reto-footer-texto">Carpeta del IDE sin vincular</span>
         </footer>
@@ -421,13 +434,9 @@
         </div>
     </div>
 
-    <!-- TOAST DE ESTANCAMIENTO (flotante, fuera de la burbuja del chat) -->
-    <div id="toast-estancamiento" class="toast-estancamiento" role="alert" aria-live="polite">
-        <div class="toast-icono">🚦</div>
-        <div class="toast-cuerpo">
-            <div class="toast-texto" id="toast-estancamiento-texto">Oye, estoy viendo que estás estancado, ¿por qué no avisas por tutoría a tu profesor?</div>
-        </div>
-        <button class="toast-cerrar" onclick="cerrarToastEstancamiento()" aria-label="Cerrar">&times;</button>
+    <!-- MODAL DE RACHA DIARIA -->
+    <div id="modal-racha" class="modal-overlay-racha" role="dialog" aria-live="polite">
+        <div class="racha-card" id="contenido-racha"></div>
     </div>
 
     <!-- BOTÓN Y MODAL DE AYUDA -->
@@ -441,16 +450,36 @@
                 <button onclick="cerrarModalAyuda()" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
             </div>
             <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
-                <p>¡Bienvenido! Este tutor no te va a dar el código resuelto, sino que te guiará para que lo descubras tú mismo.</p>
+                <p>¡Bienvenido! Este tutor no te da el código resuelto: te guía con preguntas para que lo descubras tú mismo.</p>
                 <ul style="padding-left: 20px; margin-bottom: 20px; color: var(--text-muted);">
-                    <li style="margin-bottom: 8px;"><strong>💬 Chat General:</strong> Pregunta cualquier duda sobre teoría. El tutor consultará los apuntes oficiales de tu profesor.</li>
-                    <li style="margin-bottom: 8px;"><strong>🚀 Modo Reto:</strong> Pulsa este botón para entrar en un modo de enfoque donde resolverás ejercicios paso a paso (microhitos).</li>
-                    <li style="margin-bottom: 8px;"><strong>📁 Conecta tu IDE:</strong> En el Modo Reto, puedes vincular tu carpeta local para que la IA lea tu código y te asista sin tener que copiar y pegar.</li>
-                    <li style="margin-bottom: 8px;"><strong>🚨 Detector de Estancamiento:</strong> Si te atascas, la IA lo notará y cambiará su estrategia para darte pistas más directas.</li>
+                    <li style="margin-bottom: 8px;"><strong>💬 Chat guiado:</strong> pregunta tus dudas de teoría. Selecciona un tema en la barra lateral para centrar el estudio en esos apuntes oficiales.</li>
+                    <li style="margin-bottom: 8px;"><strong>🚀 Modo Reto:</strong> resuelve ejercicios paso a paso (microhitos) con editor de código integrado. Puedes generar uno con IA, subir el tuyo (texto, <strong>PDF o Markdown</strong>) o elegir uno propuesto por tu profesor.</li>
+                    <li style="margin-bottom: 8px;"><strong>📥 Apuntes de Repaso IA:</strong> genera al instante un resumen estructurado del tema.</li>
+                    <li style="margin-bottom: 8px;"><strong>📝 Validador de Apuntes:</strong> sube tus apuntes propios y comprueba si están completos y correctos frente al temario.</li>
+                    <li style="margin-bottom: 8px;"><strong>🔥 Racha diaria:</strong> entra cada día para mantener tu racha y no perder el ritmo de estudio.</li>
                 </ul>
                 <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
-                    <em>Recuerda: Ante cualquier duda arquitectónica profunda, ¡habla con tu profesor!</em>
+                    <em>Recuerda: ante cualquier duda profunda, el tutor nunca sustituye a tu profesor. ¡Ve a tutoría!</em>
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONSENTIMIENTO DE DATOS (primera vez del alumno) -->
+    <div id="modal-consentimiento" class="modal-overlay" style="display:none; z-index:2500;">
+        <div class="modal-content-card" style="max-width:560px; text-align:left;">
+            <h3 style="margin:0 0 14px; color:var(--primary);">🔒 Protección de datos</h3>
+            <div style="color:var(--text-main); font-size:0.92rem; line-height:1.55; max-height:42vh; overflow-y:auto;">
+                <p>Para poder guiarte, el Tutor Socrático <strong>registra tus consultas e interacciones</strong> (preguntas, ejercicios y progreso) con fines exclusivamente <strong>educativos</strong>: ayudarte a aprender y permitir que tu profesorado mejore la enseñanza de la asignatura.</p>
+                <p>Tus preguntas se envían al proveedor del modelo de IA (<strong>Anthropic</strong>) únicamente para generar las respuestas. No se ceden tus datos a terceros con otros fines. El tratamiento se realiza conforme a la normativa de protección de datos de la universidad.</p>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Para más información o para ejercer tus derechos, contacta con el profesorado de la asignatura.</p>
+            </div>
+            <label style="display:flex; align-items:flex-start; gap:10px; margin:16px 0; cursor:pointer;">
+                <input type="checkbox" id="check-consentimiento" onchange="document.getElementById('btn-aceptar-consentimiento').disabled = !this.checked;" style="margin-top:3px;">
+                <span style="font-size:0.9rem;">He leído y acepto el tratamiento de mis datos con fines educativos.</span>
+            </label>
+            <div style="display:flex; justify-content:flex-end;">
+                <button id="btn-aceptar-consentimiento" class="btn-confirm" onclick="aceptarConsentimiento()" disabled>Aceptar y continuar</button>
             </div>
         </div>
     </div>

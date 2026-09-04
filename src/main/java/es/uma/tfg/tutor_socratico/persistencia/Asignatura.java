@@ -35,4 +35,9 @@ public class Asignatura {
     private String colorTema;
 
     private Integer sensibilidad;
+
+    @Column(length = 150)
+    private String emailProfesor;
+
+    private Integer diaInformeSemanal;
 }

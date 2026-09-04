@@ -261,13 +261,13 @@ body.theme-one-dark {
             position: relative;
         }
 
-        #header { 
+        #header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--header-bg); 
+            background: var(--header-bg);
             backdrop-filter: blur(16px);
-            padding: 20px 32px; 
+            padding: 3px 12px;
             border-bottom: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border-color));
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             z-index: 10;
@@ -413,7 +413,7 @@ body.theme-one-dark {
 
         #mensajes { 
             flex-grow: 1; 
-            padding: 30px; 
+            padding: 80px 30px 30px 30px; 
             overflow-y: auto; 
             display: flex; 
             flex-direction: column; 
@@ -934,7 +934,11 @@ body.theme-one-dark {
             flex: 0 0 230px;
             font-size: 0.8rem;
             color: var(--text-main);
-            white-space: nowrap;
+            max-width: 220px;
+    width: max-content;
+    pointer-events: none;
+    text-align: center;
+    word-wrap: break-word;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -1001,7 +1005,11 @@ body.theme-one-dark {
             font-size: 0.72rem;
             font-weight: 600;
             color: #fff;
-            white-space: nowrap;
+            max-width: 220px;
+    width: max-content;
+    pointer-events: none;
+    text-align: center;
+    word-wrap: break-word;
             min-width: 0;
             transition: width 0.4s ease;
         }
@@ -1074,7 +1082,11 @@ body.theme-one-dark {
         /* Pregunta/respuesta truncadas por defecto; la fila expandida las muestra enteras. */
         .celda-texto {
             max-width: 320px;
-            white-space: nowrap;
+            max-width: 220px;
+    width: max-content;
+    pointer-events: none;
+    text-align: center;
+    word-wrap: break-word;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -1296,7 +1308,11 @@ body.theme-one-dark {
     background: var(--header-bg);
     backdrop-filter: blur(14px);
 }
-.reto-topbar .reto-titulo { font-weight: 600; font-size: 1.05rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reto-topbar .reto-titulo { font-weight: 600; font-size: 1.05rem; flex: 1; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+    width: max-content;
+    pointer-events: none;
+    text-align: center;
+    word-wrap: break-word; }
 .reto-cronometro { font-family: 'JetBrains Mono', monospace; color: var(--text-muted); font-size: 0.95rem; }
 .btn-salir-reto {
     background: none; border: 1px solid var(--border-color); color: var(--text-muted);
@@ -1442,37 +1458,6 @@ body.theme-one-dark {
    DETECCIÓN DE ESTANCAMIENTO
    ========================================================================== */
 
-/* --- Toast no intrusivo del alumno --- */
-.toast-estancamiento {
-    position: fixed;
-    right: 24px;
-    bottom: 24px;
-    z-index: 1500;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    max-width: 380px;
-    padding: 16px 18px;
-    background: color-mix(in srgb, var(--primary) 16%, #12161f);
-    border: 1px solid color-mix(in srgb, var(--primary) 55%, transparent);
-    border-left: 4px solid var(--primary);
-    border-radius: 14px;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
-    color: var(--text-main);
-    transform: translateY(140%);
-    opacity: 0;
-    transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.35s ease;
-    pointer-events: none;
-}
-.toast-estancamiento.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
-.toast-estancamiento .toast-icono { font-size: 1.5rem; line-height: 1.2; }
-.toast-estancamiento .toast-texto { font-size: 0.9rem; line-height: 1.45; }
-.toast-estancamiento .toast-cerrar {
-    background: none; border: none; color: var(--text-muted); font-size: 1.25rem;
-    cursor: pointer; line-height: 1; padding: 0 2px; flex-shrink: 0;
-}
-.toast-estancamiento .toast-cerrar:hover { color: var(--text-main); }
-
 /* --- Cartelito de ética IA (fijo, sutil, abajo-izquierda del reto) --- */
 .etica-ia {
     position: absolute;
@@ -1543,4 +1528,185 @@ body.theme-one-dark {
 #btn-help-floating:hover {
     transform: scale(1.1);
 }
+
+.modal-overlay-racha {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(1, 4, 9, 0.75);
+    backdrop-filter: blur(3px);
+}
+.modal-overlay-racha.visible { display: flex; }
+
+.racha-card {
+    background: linear-gradient(160deg, #161b22, #0d1117);
+    border: 1px solid #30363d;
+    border-radius: 18px;
+    padding: 36px 40px;
+    max-width: 420px;
+    width: calc(100% - 40px);
+    text-align: center;
+    color: var(--text-main, #e6edf3);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    animation: racha-entrada 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes racha-entrada {
+    from { transform: translateY(24px) scale(0.94); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.racha-mascota { width: 130px; height: auto; margin: 0 auto 6px; display: block; }
+
+.racha-fuego {
+    position: relative;
+    display: inline-block;
+    font-size: 5rem;
+    line-height: 1;
+    animation: racha-llama 1.4s ease-in-out infinite;
+    filter: drop-shadow(0 6px 18px rgba(255, 122, 24, 0.55));
+}
+@keyframes racha-llama {
+    0%, 100% { transform: scale(1) rotate(-2deg); }
+    50% { transform: scale(1.12) rotate(2deg); }
+}
+.racha-numero {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    padding-top: 6px;
+}
+.racha-card h2 { margin: 14px 0 8px; font-size: 1.4rem; color: var(--primary, #58a6ff); }
+.racha-card p { margin: 6px 0; color: var(--text-muted, #8b949e); font-size: 0.95rem; line-height: 1.5; }
+.racha-card .racha-sub { font-size: 0.85rem; color: #f0883e; font-weight: 500; }
+
+.mascota-cafe {
+    height: 68px;
+    width: auto;
+    flex-shrink: 0;
+    vertical-align: middle;
+    pointer-events: auto;
+}
+
+/* --- Sidebar Toggle y Floating Header --- */
+#sidebar {
+    transition: margin-left 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+#sidebar.sidebar-closed {
+    margin-left: -290px;
+}
+
+.floating-header-btn {
+    position: absolute;
+    top: 18px;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--primary) 15%, var(--chat-bot-bg));
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border-color));
+    border-radius: 8px;
+    color: var(--text-main);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transition: all 0.2s;
+}
+.floating-header-btn:hover {
+    background: color-mix(in srgb, var(--primary) 25%, var(--chat-bot-bg));
+    transform: translateY(-2px);
+}
+.floating-header-btn svg { width: 20px; height: 20px; }
+
+.floating-left { left: 20px; }
+.floating-right { right: 20px; }
+
+.dropdown-menu {
+    position: absolute;
+    top: 65px;
+    right: 20px;
+    background: var(--chat-bot-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    padding: 8px 0;
+    min-width: 160px;
+}
+.dropdown-menu.show {
+    display: flex;
+}
+.dropdown-item {
+    padding: 10px 16px;
+    color: var(--text-main);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+.dropdown-item:hover {
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.reto-footer {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.reto-footer:hover {
+    background: var(--bg-hover);
+}
+
+/* --- Bocadillo Mascota --- */
+.bocadillo-tooltip {
+    position: absolute;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: #ffffff;
+    color: #111;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    max-width: 220px;
+    width: max-content;
+    pointer-events: none;
+    text-align: center;
+    word-wrap: break-word;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+}
+.bocadillo-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 8px 10px 8px;
+    border-style: solid;
+    border-color: transparent transparent #ffffff transparent;
+}
+.bocadillo-tooltip.mostrar {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+
+
 

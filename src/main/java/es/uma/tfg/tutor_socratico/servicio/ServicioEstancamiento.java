@@ -1,24 +1,22 @@
 package es.uma.tfg.tutor_socratico.servicio;
 
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.output.Response;
 import es.uma.tfg.tutor_socratico.persistencia.Asignatura;
 import es.uma.tfg.tutor_socratico.persistencia.AsignaturaRepositorio;
 import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento;
 import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento.Ambito;
 import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento.Estado;
 import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamientoRepositorio;
+import es.uma.tfg.tutor_socratico.persistencia.RegistroConsulta;
+import es.uma.tfg.tutor_socratico.persistencia.RegistroConsultaRepositorio;
+import es.uma.tfg.tutor_socratico.persistencia.RegistroConsultaRepositorio.ActividadAlumno;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -28,74 +26,44 @@ public class ServicioEstancamiento {
     private static final int SENSIBILIDAD_MAX = 8;
     private static final int SENSIBILIDAD_DEFECTO = 5;
 
-    private static final String PROMPT_CLASIFICADOR =
-            "Eres un clasificador de intención de estudio. Recibes dos preguntas de un mismo alumno. " +
-            "Decide si tratan esencialmente la MISMA duda o concepto concreto (aunque estén redactadas distinto), " +
-            "o si son dudas DIFERENTES. Responde con una sola palabra: SI (misma duda) o NO (duda diferente).";
+    private static final int DIAS_HISTORIAL = 14;
+    private static final int DIAS_INACTIVIDAD = 3;
 
-    private static final class Racha {
-        String tema;
-        String preguntaAncla;
-        int contador;
-    }
-
-    private final Map<String, Racha> rachas = new ConcurrentHashMap<>();
-    private final ChatLanguageModel chatLanguageModel;
     private final AsignaturaRepositorio asignaturaRepositorio;
     private final AvisoEstancamientoRepositorio avisoRepositorio;
+    private final RegistroConsultaRepositorio consultaRepositorio;
 
-    public ServicioEstancamiento(ChatLanguageModel chatLanguageModel,
-                                 AsignaturaRepositorio asignaturaRepositorio,
-                                 AvisoEstancamientoRepositorio avisoRepositorio) {
-        this.chatLanguageModel = chatLanguageModel;
+    public ServicioEstancamiento(AsignaturaRepositorio asignaturaRepositorio,
+                                 AvisoEstancamientoRepositorio avisoRepositorio,
+                                 RegistroConsultaRepositorio consultaRepositorio) {
         this.asignaturaRepositorio = asignaturaRepositorio;
         this.avisoRepositorio = avisoRepositorio;
+        this.consultaRepositorio = consultaRepositorio;
     }
 
-    public record Evaluacion(boolean estancado, Long avisoId, int iteraciones, int umbral, String mensaje) {
-        static Evaluacion sin() { return new Evaluacion(false, null, 0, 0, null); }
-    }
+    @Transactional
+    public void detectarInactivos(String asignaturaId) {
+        String asig = normalizar(asignaturaId);
+        int umbral = obtenerSensibilidad(asig);
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime inicioReciente = ahora.minusDays(DIAS_INACTIVIDAD);
+        LocalDateTime inicioPrevia = ahora.minusDays(DIAS_HISTORIAL);
 
-    public Evaluacion evaluar(String username, String asignaturaId, Ambito ambito, String tema, String pregunta) {
-        try {
-            String asig = normalizar(asignaturaId);
-            int umbral = obtenerSensibilidad(asig);
-            String temaNorm = (tema == null || tema.isBlank()) ? "General" : tema.trim();
-            String clave = username + "|" + asig + "|" + ambito;
-
-            Racha racha = rachas.computeIfAbsent(clave, k -> new Racha());
-            synchronized (racha) {
-                boolean mismoTema = temaNorm.equalsIgnoreCase(racha.tema);
-                if (!mismoTema) {
-                    racha.tema = temaNorm;
-                    racha.preguntaAncla = pregunta;
-                    racha.contador = 1;
-                } else if (esMismaDuda(racha.preguntaAncla, pregunta)) {
-                    racha.contador++;
-                } else {
-                    racha.preguntaAncla = pregunta;
-                    racha.contador = 1;
-                }
-
-                if (racha.contador >= umbral) {
-                    Long avisoId = registrarOActualizarAviso(username, asig, ambito, temaNorm, racha.preguntaAncla, racha.contador);
-                    return new Evaluacion(true, avisoId, racha.contador, umbral,
-                            "Oye, estoy viendo que estás estancado, ¿por qué no avisas por tutoría a tu profesor?");
-                }
-                return new Evaluacion(false, null, racha.contador, umbral, null);
+        for (ActividadAlumno a : consultaRepositorio.resumenActividad(asig, inicioPrevia, inicioReciente)) {
+            boolean eraActivo = a.getPrevias() >= umbral;
+            boolean haParado = a.getRecientes() == 0;
+            if (eraActivo && haParado) {
+                registrarOActualizarAviso(asig, a.getUsername(), (int) a.getPrevias());
+            } else if (a.getRecientes() > 0) {
+                cerrarAvisoSiActivo(asig, a.getUsername());
             }
-        } catch (Throwable t) {
-            log.warn("Fallo evaluando estancamiento de {}: {}", username, t.getMessage());
-            return Evaluacion.sin();
         }
     }
 
-    public void reiniciarRacha(String username, String asignaturaId, Ambito ambito) {
-        rachas.remove(username + "|" + normalizar(asignaturaId) + "|" + ambito);
-    }
-
+    @Transactional
     public List<Map<String, Object>> listarAlumnosConProblemas(String asignaturaId) {
         String asig = normalizar(asignaturaId);
+        detectarInactivos(asig);
         return avisoRepositorio.findByAsignaturaIdAndEstadoOrderByFechaActualizacionDesc(asig, Estado.ABIERTO)
                 .stream()
                 .map(a -> Map.<String, Object>of(
@@ -137,40 +105,38 @@ public class ServicioEstancamiento {
         return v;
     }
 
-    private Long registrarOActualizarAviso(String username, String asignaturaId, Ambito ambito,
-                                           String tema, String preguntaEjemplo, int iteraciones) {
+    private void registrarOActualizarAviso(String asignaturaId, String username, int consultasPrevias) {
+        RegistroConsulta ultima = consultaRepositorio
+                .buscarConFiltros(asignaturaId, username, null, null, null, PageRequest.of(0, 1))
+                .stream().findFirst().orElse(null);
+        String tema = (ultima != null && ultima.getTema() != null && !ultima.getTema().isBlank())
+                ? ultima.getTema() : "General";
+        String pregunta = ultima != null && ultima.getPregunta() != null ? ultima.getPregunta() : "";
+        LocalDateTime fechaUltima = ultima != null ? ultima.getFechaHora() : LocalDateTime.now();
+
         AvisoEstancamiento aviso = avisoRepositorio
-                .findFirstByUsernameAndAsignaturaIdAndAmbitoAndTemaAndEstado(username, asignaturaId, ambito, tema, Estado.ABIERTO)
+                .findFirstByUsernameAndAsignaturaIdAndEstado(username, asignaturaId, Estado.ABIERTO)
                 .orElseGet(() -> AvisoEstancamiento.builder()
                         .username(username)
                         .asignaturaId(asignaturaId)
-                        .ambito(ambito)
-                        .tema(tema)
+                        .ambito(Ambito.CHAT)
                         .estado(Estado.ABIERTO)
                         .fechaCreacion(LocalDateTime.now())
                         .build());
-        aviso.setPreguntaEjemplo(preguntaEjemplo);
-        aviso.setIteraciones(iteraciones);
-        aviso.setFechaActualizacion(LocalDateTime.now());
-        return avisoRepositorio.save(aviso).getId();
+        aviso.setTema(tema);
+        aviso.setPreguntaEjemplo(pregunta);
+        aviso.setIteraciones(consultasPrevias);
+        aviso.setFechaActualizacion(fechaUltima);
+        avisoRepositorio.save(aviso);
     }
 
-
-    private boolean esMismaDuda(String ancla, String nueva) {
-        if (ancla == null || nueva == null || ancla.isBlank() || nueva.isBlank()) return false;
-        if (ancla.trim().equalsIgnoreCase(nueva.trim())) return true;
-        try {
-            Response<AiMessage> r = chatLanguageModel.generate(
-                    SystemMessage.from(PROMPT_CLASIFICADOR),
-                    UserMessage.from("Pregunta A (ancla): " + ancla + "\nPregunta B (nueva): " + nueva +
-                            "\n¿Misma duda o concepto concreto? Responde SI o NO."));
-            String txt = (r != null && r.content() != null) ? r.content().text() : "";
-            String t = txt.trim().toUpperCase(Locale.ROOT);
-            return t.startsWith("SI") || t.startsWith("SÍ") || t.contains(" SI") || t.contains("MISMA");
-        } catch (Throwable e) {
-            log.warn("No se pudo clasificar la duda con el LLM: {}", e.getMessage());
-            return false;
-        }
+    private void cerrarAvisoSiActivo(String asignaturaId, String username) {
+        avisoRepositorio.findFirstByUsernameAndAsignaturaIdAndEstado(username, asignaturaId, Estado.ABIERTO)
+                .ifPresent(a -> {
+                    a.setEstado(Estado.RESUELTO);
+                    a.setFechaResuelto(LocalDateTime.now());
+                    avisoRepositorio.save(a);
+                });
     }
 
     private int acotarSensibilidad(Integer valor) {

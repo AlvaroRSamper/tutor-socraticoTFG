@@ -43,4 +43,29 @@ public class PerfilAlumnoRegistro {
     
     @Column(nullable = false, columnDefinition = "boolean not null default false")
     private boolean esperandoRecalibracion;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 4")
+    private int ultimaIteracionRecalibracion;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
+    private int rachaNoUtil;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
+    private int contadorUtil;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
+    private int contadorNoUtil;
+
+    private java.time.LocalDate ultimoDiaActivo;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
+    private int rachaActual;
+
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
+    private int rachaMaxima;
+
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean consentimientoDatos;
+
+    private java.time.LocalDateTime fechaConsentimiento;
 }

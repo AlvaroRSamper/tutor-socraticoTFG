@@ -46,6 +46,82 @@ function renumerarHitos() {
     document.querySelectorAll('#prop-hitos .orden-badge').forEach((b, i) => b.innerText = i + 1);
 }
 
+async function cargarEnunciadoDesdeArchivo() {
+    const input = document.getElementById('prop-archivo');
+    const archivo = input && input.files ? input.files[0] : null;
+    const estado = document.getElementById('estado-prop');
+    if (!archivo) {
+        estado.style.color = '#f85149';
+        estado.innerText = 'Elige un archivo PDF, Markdown o TXT.';
+        return;
+    }
+    estado.style.color = '#8b949e';
+    estado.innerText = 'Extrayendo el enunciado del archivo…';
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    try {
+        const res = await fetch('/api/reto/profesor/extraer-texto', {
+            method: 'POST',
+            headers: retoCabecerasCsrf(),
+            body: datos
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            estado.style.color = '#f85149';
+            estado.innerText = data.mensaje || 'No se pudo procesar el archivo.';
+            return;
+        }
+        document.getElementById('prop-enunciado').value = data.texto || '';
+        estado.style.color = '#3fb950';
+        estado.innerText = '✓ Enunciado cargado. Revísalo y genera los microhitos.';
+    } catch (e) {
+        estado.style.color = '#f85149';
+        estado.innerText = 'Error de conexión al procesar el archivo.';
+    }
+}
+
+async function generarMicrohitosIa() {
+    const enunciado = document.getElementById('prop-enunciado').value.trim();
+    const tema = document.getElementById('prop-tema').value.trim();
+    const estado = document.getElementById('estado-prop');
+    if (!enunciado) {
+        estado.style.color = '#f85149';
+        estado.innerText = 'Escribe primero el enunciado para generar los microhitos.';
+        return;
+    }
+    const boton = document.getElementById('btn-generar-hitos');
+    boton.disabled = true;
+    estado.style.color = '#8b949e';
+    estado.innerText = 'Generando microhitos con IA…';
+    try {
+        const res = await fetch('/api/reto/profesor/microhitos', {
+            method: 'POST',
+            headers: retoCabecerasCsrf({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ enunciado, lenguaje: 'java', tema })
+        });
+        if (!res.ok) {
+            estado.style.color = '#f85149';
+            estado.innerText = 'No se pudieron generar los microhitos.';
+            return;
+        }
+        const hitos = await res.json();
+        if (!Array.isArray(hitos) || hitos.length === 0) {
+            estado.style.color = '#f85149';
+            estado.innerText = 'La IA no devolvió microhitos. Prueba a detallar más el enunciado.';
+            return;
+        }
+        document.getElementById('prop-hitos').innerHTML = '';
+        hitos.forEach(h => agregarFilaHito(h.titulo, h.descripcion, h.criterioValidacion));
+        estado.style.color = '#3fb950';
+        estado.innerText = '✓ ' + hitos.length + ' microhitos generados. Revísalos y edítalos antes de publicar.';
+    } catch (e) {
+        estado.style.color = '#f85149';
+        estado.innerText = 'Error de conexión al generar los microhitos.';
+    } finally {
+        boton.disabled = false;
+    }
+}
+
 async function publicarPropuesto(event) {
     event.preventDefault();
     const titulo = document.getElementById('prop-titulo').value.trim();

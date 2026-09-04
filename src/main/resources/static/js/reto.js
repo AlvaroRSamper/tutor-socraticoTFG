@@ -229,6 +229,29 @@ async function retoSubirPropio() {
     } catch (e) { retoErrorModal('Error de conexión al subir el ejercicio.'); }
 }
 
+async function retoSubirArchivo() {
+    const input = document.getElementById('reto-subir-archivo');
+    const archivo = input && input.files ? input.files[0] : null;
+    if (!archivo) { alert('Elige un archivo PDF, Markdown o TXT.'); return; }
+    const titulo = document.getElementById('reto-subir-titulo').value.trim();
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    if (titulo) datos.append('titulo', titulo);
+    datos.append('tema', 'General');
+    datos.append('lenguaje', 'java');
+    retoMostrarCargando('Extrayendo el enunciado del archivo y dividiéndolo en microhitos…');
+    try {
+        const res = await fetch('/api/reto/subir-archivo', {
+            method: 'POST',
+            headers: cabecerasConCsrf(),
+            body: datos
+        });
+        const data = await res.json();
+        if (!res.ok) return retoErrorModal(data.mensaje || 'No se pudo procesar el archivo.');
+        await retoIniciarDesdeEjercicio(data.ejercicioId, false);
+    } catch (e) { retoErrorModal('Error de conexión al subir el archivo.'); }
+}
+
 async function retoCargarPropuestos() {
     const cont = document.getElementById('reto-lista-propuestos');
     cont.innerHTML = '<p class="texto-vacio" style="color: var(--text-muted);">Cargando…</p>';
@@ -389,7 +412,6 @@ async function retoEnviarMensaje() {
         retoEstado.historial.push({ role: 'assistant', content: data.mensaje });
         marked.setOptions({ breaks: true });
         burbuja.innerHTML = marked.parse(data.mensaje || '');
-        if (data.estancamiento) mostrarToastEstancamiento(data.mensajeEstancamiento, data.avisoId);
     } catch (e) {
         const burbuja = document.getElementById(id);
         if (burbuja) burbuja.innerText = 'Error de conexión.';
@@ -516,29 +538,4 @@ function cerrarPantallaExito() {
 function escaparHtml(str) {
     if (str == null) return '';
     return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-/* ---------------------- Toast de estancamiento (compartido chat + reto) ---------------------- */
-
-const avisosEstancamientoMostrados = new Set();
-let toastEstancamientoTimer = null;
-
-/** Muestra el aviso no intrusivo. Solo una vez por avisoId para no ser repetitivo. */
-function mostrarToastEstancamiento(mensaje, avisoId) {
-    const key = avisoId || 0;
-    if (avisosEstancamientoMostrados.has(key)) return;
-    avisosEstancamientoMostrados.add(key);
-    const toast = document.getElementById('toast-estancamiento');
-    if (!toast) return;
-    const txt = document.getElementById('toast-estancamiento-texto');
-    if (txt && mensaje) txt.innerText = mensaje;
-    toast.classList.add('visible');
-    clearTimeout(toastEstancamientoTimer);
-    toastEstancamientoTimer = setTimeout(cerrarToastEstancamiento, 14000);
-}
-
-function cerrarToastEstancamiento() {
-    const toast = document.getElementById('toast-estancamiento');
-    if (toast) toast.classList.remove('visible');
-    clearTimeout(toastEstancamientoTimer);
 }

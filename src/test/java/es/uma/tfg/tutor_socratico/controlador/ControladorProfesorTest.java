@@ -78,7 +78,7 @@ class ControladorProfesorTest {
 
     @Test
     void profesorConfiguraAsignaturaCorrectamente() throws Exception {
-        when(servicioIngesta.configurarAsignatura(anyString(), any(), anyString(), any(), any(), any()))
+        when(servicioIngesta.configurarAsignatura(anyString(), any(), anyString(), any(), any(), any(), any(), any()))
                 .thenReturn(3);
 
         mockMvc.perform(post("/api/profesor/asignatura/configurar")

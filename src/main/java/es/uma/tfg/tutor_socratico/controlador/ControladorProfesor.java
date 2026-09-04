@@ -10,10 +10,12 @@ import es.uma.tfg.tutor_socratico.dto.RespuestaResumen;
 import es.uma.tfg.tutor_socratico.dto.RespuestaSensibilidad;
 import es.uma.tfg.tutor_socratico.persistencia.Asignatura;
 import es.uma.tfg.tutor_socratico.persistencia.AsignaturaRepositorio;
+import es.uma.tfg.tutor_socratico.persistencia.PerfilAlumnoRegistro;
 import es.uma.tfg.tutor_socratico.persistencia.PerfilAlumnoRepositorio;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroConsulta;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroConsultaRepositorio;
 import es.uma.tfg.tutor_socratico.servicio.ServicioEstancamiento;
+import es.uma.tfg.tutor_socratico.servicio.ServicioInformeSemanal;
 import es.uma.tfg.tutor_socratico.servicio.ServicioIngesta;
 import es.uma.tfg.tutor_socratico.servicio.ServicioTutor;
 import jakarta.servlet.http.HttpSession;
@@ -51,19 +53,22 @@ public class ControladorProfesor {
     private final AsignaturaRepositorio asignaturaRepositorio;
     private final ServicioTutor servicioTutor;
     private final ServicioEstancamiento servicioEstancamiento;
+    private final ServicioInformeSemanal servicioInformeSemanal;
 
     public ControladorProfesor(RegistroConsultaRepositorio repositorio,
                                PerfilAlumnoRepositorio perfilRepositorio,
                                ServicioIngesta servicioIngesta,
                                AsignaturaRepositorio asignaturaRepositorio,
                                ServicioTutor servicioTutor,
-                               ServicioEstancamiento servicioEstancamiento) {
+                               ServicioEstancamiento servicioEstancamiento,
+                               ServicioInformeSemanal servicioInformeSemanal) {
         this.repositorio = repositorio;
         this.perfilRepositorio = perfilRepositorio;
         this.servicioIngesta = servicioIngesta;
         this.asignaturaRepositorio = asignaturaRepositorio;
         this.servicioTutor = servicioTutor;
         this.servicioEstancamiento = servicioEstancamiento;
+        this.servicioInformeSemanal = servicioInformeSemanal;
     }
 
     private String resolverAsignaturaId(HttpSession session, String param) {
@@ -83,7 +88,10 @@ public class ControladorProfesor {
         String colorTema = (asig != null && asig.getColorTema() != null) ? asig.getColorTema() : "github-dark";
         String temas = (asig != null && asig.getTemas() != null) ? asig.getTemas() : "";
         int sensibilidad = servicioEstancamiento.obtenerSensibilidad(asignaturaId);
-        return new RespuestaInfoAsignatura(asignaturaId, titulo, prompt, colorTema, temas, sensibilidad);
+        String emailProfesor = (asig != null && asig.getEmailProfesor() != null) ? asig.getEmailProfesor() : "";
+        Integer diaInformeSemanal = (asig != null) ? asig.getDiaInformeSemanal() : null;
+        return new RespuestaInfoAsignatura(asignaturaId, titulo, prompt, colorTema, temas, sensibilidad,
+                emailProfesor, diaInformeSemanal);
     }
 
     
@@ -93,13 +101,16 @@ public class ControladorProfesor {
             @RequestParam("systemPrompt") String systemPrompt,
             @RequestParam(value = "colorTema", required = false) String colorTema,
             @RequestParam(value = "sensibilidad", required = false) Integer sensibilidad,
+            @RequestParam(value = "emailProfesor", required = false) String emailProfesor,
+            @RequestParam(value = "diaInformeSemanal", required = false) Integer diaInformeSemanal,
             @RequestParam(value = "archivos", required = false) MultipartFile[] archivos,
             @RequestParam(value = "asignaturaId", required = false) String asignaturaIdParam,
             HttpSession session) {
 
         String asignaturaId = resolverAsignaturaId(session, asignaturaIdParam);
 
-        int documentos = servicioIngesta.configurarAsignatura(asignaturaId, titulo, systemPrompt, colorTema, sensibilidad, archivos);
+        int documentos = servicioIngesta.configurarAsignatura(asignaturaId, titulo, systemPrompt, colorTema,
+                sensibilidad, emailProfesor, diaInformeSemanal, archivos);
 
         return ResponseEntity.ok(new RespuestaConfiguracion(
                 true,
@@ -121,10 +132,21 @@ public class ControladorProfesor {
         return ResponseEntity.ok(new RespuestaExito(ok));
     }
 
-    @GetMapping("/asignatura/radar-confusion")
-    public RespuestaRadar radarConfusion(@RequestParam(required = false) String asignaturaId, HttpSession session) {
+    @PostMapping("/asignatura/informe-semanal/probar")
+    public RespuestaExito probarInformeSemanal(@RequestParam(required = false) String asignaturaId, HttpSession session) {
         String asig = resolverAsignaturaId(session, asignaturaId);
-        List<RegistroConsulta> ultimas = repositorio.buscarUltimasConsultasChat(asig, PageRequest.of(0, 60));
+        boolean ok = servicioInformeSemanal.enviarInforme(asig, true);
+        return new RespuestaExito(ok);
+    }
+
+    @GetMapping("/asignatura/radar-confusion")
+    public RespuestaRadar radarConfusion(@RequestParam(required = false) String asignaturaId,
+                                         @RequestParam(defaultValue = "2") int semanas,
+                                         HttpSession session) {
+        String asig = resolverAsignaturaId(session, asignaturaId);
+        int sem = Math.max(1, Math.min(6, semanas));
+        LocalDateTime desde = LocalDateTime.now().minusWeeks(sem);
+        List<RegistroConsulta> ultimas = repositorio.buscarChatDesde(asig, desde, PageRequest.of(0, 200));
         List<String> preguntas = ultimas.stream().map(RegistroConsulta::getPregunta).toList();
         String analisis = servicioTutor.analizarPuntosCiegos(preguntas, asig);
         return new RespuestaRadar(asig, analisis != null ? analisis : "");
@@ -190,11 +212,20 @@ public class ControladorProfesor {
                     int teorico = Math.max(1, p.getContadorTeorico());
                     int practico = Math.max(1, p.getContadorPractico());
                     int porcentajeTeorico = Math.round(100f * teorico / (teorico + practico));
+                    int totalUtilidad = p.getContadorUtil() + p.getContadorNoUtil();
+                    int porcentajeUtil = totalUtilidad == 0 ? 100 : Math.round(100f * p.getContadorUtil() / totalUtilidad);
                     return new PerfilDocente(p.getUsername(), porcentajeTeorico,
-                            100 - porcentajeTeorico, teorico + practico - 2);
+                            100 - porcentajeTeorico, teorico + practico - 2, porcentajeUtil, rachaVigente(p));
                 })
                 .sorted((a, b) -> a.alumno().compareTo(b.alumno()))
                 .toList();
+    }
+
+    private int rachaVigente(PerfilAlumnoRegistro p) {
+        LocalDate ultimo = p.getUltimoDiaActivo();
+        if (ultimo == null) return 0;
+        long dias = java.time.temporal.ChronoUnit.DAYS.between(ultimo, LocalDate.now());
+        return dias <= 1 ? p.getRachaActual() : 0;
     }
 
     private static final int TAM_PAGINA_INFORME = 500;

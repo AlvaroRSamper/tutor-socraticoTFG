@@ -30,7 +30,7 @@
         }
         if (data.titulo && data.titulo.trim() !== "") {
             document.title = data.titulo + ' · Tutor Socrático';
-            const h1 = document.querySelector('#header h1');
+            const h1 = document.getElementById('titulo-chat');
             if (h1) h1.innerText = data.titulo;
         }
         if (data.colorTema && data.colorTema.trim() !== "") {
@@ -115,7 +115,7 @@
                     return;
                 }
                 document.getElementById('pantalla-login').style.display = 'none';
-                aplicarConfiguracionYTemas(dataChk);
+                location.reload();
             } else {
                 const json = await respuesta.json().catch(() => ({}));
                 errorEl.innerText = json.mensaje || 'Usuario o contraseña incorrectos';
@@ -173,6 +173,7 @@
     };
 
     window.onload = async () => {
+        iniciarMascotaCafe();
         try {
             const res = await fetch('/api/tutor/temas');
             if (res.ok) {
@@ -199,6 +200,11 @@
                 }
                 document.getElementById('pantalla-login').style.display = 'none';
                 aplicarConfiguracionYTemas(data);
+                if (await comprobarConsentimiento()) {
+                    mostrarRachaDelDia(data.titulo);
+                } else {
+                    mostrarModalConsentimiento(data.titulo);
+                }
             }
         } catch (e) {
             console.error("Error cargando temas", e);
@@ -233,7 +239,7 @@
         temaActual = elemento.getAttribute('data-file');
         const nombreVisible = elemento.innerText.split('. ').pop().trim();
         
-        document.getElementById('titulo-chat').innerText = "Tutor: " + nombreVisible;
+        // No actualizamos titulo-chat para que mantenga el título de la asignatura
         agregarAvisoContexto("Contexto RAG cambiado a: " + nombreVisible);
     }
 
@@ -348,8 +354,8 @@
         let opcionB = "";
 
         // Usamos regex para capturar variaciones (Opción 1, Opción A, con o sin asteriscos)
-        const regexA = /(?:\*\*|###\s*)?Opción\s*[A1].*?(?:\*\*|:)/i;
-        const regexB = /(?:\*\*|###\s*)?Opción\s*[B2].*?(?:\*\*|:)/i;
+        const regexA = /(?:^|\n)\s*(?:\*\*|###\s*)?Opci.n\s*[A1]/i;
+        const regexB = /(?:^|\n)\s*(?:\*\*|###\s*)?Opci.n\s*[B2]/i;
 
         const matchA = mensaje.match(regexA);
         const matchB = mensaje.match(regexB);
@@ -679,6 +685,7 @@
         const listo = document.getElementById('contenido-repaso-listo');
         if (listo) listo.style.display = 'none';
 
+        iniciarMascotaCafe();
         try {
             const res = await fetch('/api/tutor/repaso', {
                 method: 'POST',
@@ -913,3 +920,108 @@ async function borrarApunteAlumno(id, tema) {
         console.error('Error al borrar', e);
     }
 }
+
+/* --- Toggle Funciones Header --- */
+window.toggleSidebar = () => { const sidebar = document.getElementById('sidebar'); if (sidebar) sidebar.classList.toggle('sidebar-closed'); }; window.toggleHeaderMenu = (e) => { if (e) e.stopPropagation(); const dropdown = document.getElementById('header-dropdown'); if (dropdown) dropdown.classList.toggle('show'); }; document.addEventListener('click', (e) => { const dropdown = document.getElementById('header-dropdown'); const btn = document.querySelector('.floating-right'); if (dropdown && btn && dropdown.classList.contains('show') && !dropdown.contains(e.target) && !btn.contains(e.target)) dropdown.classList.remove('show'); });
+
+
+
+
+function iniciarMascotaCafe() { const v = document.getElementById('mascota-cafe'); if (!v || v.tagName !== 'IMG') return; const srcOriginal = v.src; const reproducir = () => { v.src = ''; setTimeout(() => { v.src = srcOriginal.split('?')[0]; }, 50); }; reproducir(); setInterval(reproducir, 20000); }
+
+
+
+
+/* --- Consentimiento de datos (primera vez del alumno) --- */
+let consentTituloPendiente = null;
+
+async function comprobarConsentimiento() {
+    try {
+        const res = await fetch('/api/tutor/consentimiento');
+        if (!res.ok) return true;
+        const data = await res.json();
+        return !!data.aceptado;
+    } catch (e) {
+        return true;
+    }
+}
+
+function mostrarModalConsentimiento(titulo) {
+    consentTituloPendiente = titulo;
+    const m = document.getElementById('modal-consentimiento');
+    if (m) m.style.display = 'flex';
+}
+
+window.aceptarConsentimiento = async () => {
+    try {
+        await fetch('/api/tutor/consentimiento', { method: 'POST', headers: cabecerasConCsrf() });
+    } catch (e) {
+        console.error('Error registrando el consentimiento', e);
+    }
+    const m = document.getElementById('modal-consentimiento');
+    if (m) m.style.display = 'none';
+    mostrarRachaDelDia(consentTituloPendiente);
+};
+
+/* --- Racha Diaria --- */
+async function mostrarRachaDelDia(titulo) {
+    try {
+        const res = await fetch('/api/tutor/racha', { method: 'POST', headers: cabecerasConCsrf() });
+        if (!res.ok) return;
+        const estado = await res.json();
+        if (estado.aumentada) {
+            let msg = estado.mostrarMensajeBienvenida 
+                ? "¡Hola de nuevo! Has estado unos días fuera, pero tu progreso sigue ahí."
+                : "¡Buen trabajo! Un día más entrando a repasar.";
+            
+            document.getElementById('contenido-racha').innerHTML = `
+                <div style="text-align:center;">
+                    <img src="mascota-feliz.png" alt="Mascota" style="height:100px; margin-bottom:15px;">
+                    <h3 style="margin:0 0 10px 0; color:var(--primary);">🔥 ¡Racha Diaria!</h3>
+                    <p style="font-size:0.9rem; color:var(--text-main); margin-bottom:15px;">${msg}</p>
+                    <div style="font-size:1.5rem; font-weight:800; color:#fff; background:var(--primary); padding:10px; border-radius:10px; display:inline-block;">
+                        🔥 ${estado.rachaActual} días
+                    </div>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Racha máxima: ${estado.rachaMaxima} días</p>
+                    <button onclick="document.getElementById('modal-racha').style.display='none'" style="margin-top:15px; padding:8px 20px; background:var(--bg-secondary); border:none; border-radius:6px; color:var(--text-main); cursor:pointer;">Continuar</button>
+                </div>
+            `;
+            document.getElementById('modal-racha').style.display = 'flex';
+        }
+    } catch (e) {
+        console.error("Error cargando racha", e);
+    }
+}
+
+function iniciarMascotaCafe() { const v = document.getElementById('mascota-cafe'); if (!v || v.tagName !== 'IMG') return; const srcOriginal = v.src; const reproducir = () => { v.src = ''; setTimeout(() => { v.src = srcOriginal.split('?')[0]; }, 50); }; reproducir(); setInterval(reproducir, 20000); }
+
+
+/* --- Frases Motivadoras Mascota --- */
+(function() {
+    const mascota = document.getElementById("mascota-cafe");
+    const bocadillo = document.getElementById("bocadillo-mascota");
+    if (!mascota || !bocadillo) return;
+
+    const frases = [
+        "Un error no es un paso atrás, es una pista para la solución. ¡Sigue buscando!",
+        "Respira, lee el mensaje de la consola y vuelve a intentarlo. Tú puedes con ese bug.",
+        "Todo código maestro empezó fallando al compilar. No te desanimes.",
+        "Un punto y coma o un fallo de sintaxis no te van a ganar la batalla de hoy.",
+        "Los bugs son solo rompecabezas esperando a que encuentres la pieza correcta.",
+        "Programa, equivócate, aprende y repite. Esa es la verdadera sintaxis del éxito.",
+        "No necesitas ser un genio, solo necesitas no rendirte frente a la pantalla.",
+        "Estás aprendiendo a construir el futuro, línea por línea.",
+        "La lógica se entrena. Cada reto que resuelves hoy te hace mejor desarrollador mañana.",
+        "Nadie nace sabiendo programar. La constancia es tu mejor algoritmo."
+    ];
+
+    mascota.addEventListener("mouseenter", () => {
+        const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
+        bocadillo.innerText = fraseAleatoria;
+        bocadillo.classList.add("mostrar");
+    });
+
+    mascota.addEventListener("mouseleave", () => {
+        bocadillo.classList.remove("mostrar");
+    });
+})();

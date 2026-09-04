@@ -24,7 +24,6 @@ import es.uma.tfg.tutor_socratico.perfil.PerfilAlumno;
 import es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio;
 import es.uma.tfg.tutor_socratico.persistencia.Asignatura;
 import es.uma.tfg.tutor_socratico.persistencia.AsignaturaRepositorio;
-import es.uma.tfg.tutor_socratico.persistencia.AvisoEstancamiento;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,8 +37,6 @@ import java.util.Map;
 public class ServicioTutor {
 
     private static final int ITERACIONES_CALIBRACION = 4;
-    private static final int INICIO_RECALIBRACION = 7;
-    private static final int PERIODO_RECALIBRACION = 3;
 
     private static final String PROMPT_SISTEMA_POR_DEFECTO =
             "Eres un tutor socrático universitario. " +
@@ -67,27 +64,36 @@ public class ServicioTutor {
     private final PerfilAprendizajeServicio perfilAprendizajeServicio;
     private final ServicioRegistroConsultas servicioRegistroConsultas;
     private final AsignaturaRepositorio asignaturaRepositorio;
-    private final ServicioEstancamiento servicioEstancamiento;
+
+    private java.util.function.DoubleSupplier fuenteAleatoria = Math::random;
+
+    void setFuenteAleatoria(java.util.function.DoubleSupplier fuenteAleatoria) {
+        this.fuenteAleatoria = fuenteAleatoria;
+    }
 
     public ServicioTutor(ChatLanguageModel chatLanguageModel,
                         EmbeddingModel embeddingModel,
                         EmbeddingStore<TextSegment> embeddingStore,
                         PerfilAprendizajeServicio perfilAprendizajeServicio,
                         ServicioRegistroConsultas servicioRegistroConsultas,
-                        AsignaturaRepositorio asignaturaRepositorio,
-                        ServicioEstancamiento servicioEstancamiento) {
+                        AsignaturaRepositorio asignaturaRepositorio) {
         this.chatLanguageModel = chatLanguageModel;
         this.embeddingModel = embeddingModel;
         this.embeddingStore = embeddingStore;
         this.perfilAprendizajeServicio = perfilAprendizajeServicio;
         this.servicioRegistroConsultas = servicioRegistroConsultas;
         this.asignaturaRepositorio = asignaturaRepositorio;
-        this.servicioEstancamiento = servicioEstancamiento;
     }
 
     public RespuestaChat consultarTutor(PeticionChat peticion, String username, String asignaturaId) {
         try {
             String ultimaPregunta = peticion.historial().get(peticion.historial().size() - 1).content();
+
+            String temaSel = peticion.tema();
+            boolean temaConcreto = temaSel != null && !temaSel.isBlank() && !temaSel.equalsIgnoreCase("General");
+            String temaNombre = temaConcreto
+                    ? temaSel.replaceAll("\\.[^.]+$", "").trim().replace("\"", "'")
+                    : "todo el temario";
 
             PerfilAlumno perfil = perfilAprendizajeServicio.obtenerOCrear(username, asignaturaId);
             if (perfil.esperandoRecalibracion()) {
@@ -98,8 +104,9 @@ public class ServicioTutor {
             perfil.incrementarIteracion();
             int iteracion = perfil.iteracionChat();
 
+            String consultaRag = temaConcreto ? (temaNombre + ". " + ultimaPregunta) : ultimaPregunta;
             List<EmbeddingMatch<TextSegment>> resultados = buscarSegmentosRelevantes(
-                    ultimaPregunta, peticion.tema(), asignaturaId, 4, 0.5, username);
+                    consultaRag, peticion.tema(), asignaturaId, 4, 0.0, username);
 
             StringBuilder contexto = new StringBuilder();
             if (resultados != null) {
@@ -113,30 +120,42 @@ public class ServicioTutor {
             }
 
             boolean esCalibracion = iteracion <= ITERACIONES_CALIBRACION;
-            String fase = esCalibracion ? "CALIBRACION" : "PERMANENTE";
-            boolean tocaRecalibrar = !esCalibracion
-                    && iteracion >= INICIO_RECALIBRACION
-                    && (iteracion - INICIO_RECALIBRACION) % PERIODO_RECALIBRACION == 0;
+            
+            boolean tocaRecalibrar = false;
+            if (!esCalibracion) {
+                int iteracionesDesdeUltima = iteracion - perfil.ultimaIteracionRecalibracion();
+                double probabilidad = 0.0;
+                if (iteracionesDesdeUltima == 1) probabilidad = 0.15;
+                else if (iteracionesDesdeUltima == 2) probabilidad = 0.40;
+                else if (iteracionesDesdeUltima == 3) probabilidad = 0.70;
+                else if (iteracionesDesdeUltima >= 4) probabilidad = 1.0;
+                
+                tocaRecalibrar = fuenteAleatoria.getAsDouble() < probabilidad;
+            }
+
+            boolean mostrarOpciones = esCalibracion || tocaRecalibrar;
+            String fase = mostrarOpciones ? "CALIBRACION" : "PERMANENTE";
 
             String instruccionFase;
-            if (esCalibracion) {
+            if (mostrarOpciones) {
                 instruccionFase = "Fase de calibración del perfil de aprendizaje del alumno. " +
                         "Responde en DOS bloques claramente diferenciados, con estos títulos exactos en markdown: " +
                         "\"**Opción A (Enfoque Teórico)**\" (explica los conceptos y el porqué) y " +
                         "\"**Opción B (Enfoque Práctico)**\" (muestra un mini-ejemplo o aplicación directa, sin teoría profunda). " +
                         "Termina preguntando expresamente al alumno cuál de las dos opciones le ha resultado más útil.";
+                
+                if (tocaRecalibrar) {
+                    perfil.setUltimaIteracionRecalibracion(iteracion);
+                }
             } else {
-                instruccionFase = "El alumno tiene un perfil de aprendizaje de " + perfil.porcentajeTeorico() +
-                        "% teórico / " + perfil.porcentajePractico() + "% práctico. Da una ÚNICA respuesta " +
+                int pctTeorico = perfil.isInvertido() ? perfil.porcentajePractico() : perfil.porcentajeTeorico();
+                int pctPractico = perfil.isInvertido() ? perfil.porcentajeTeorico() : perfil.porcentajePractico();
+                
+                instruccionFase = "El alumno tiene un perfil de aprendizaje de " + pctTeorico +
+                        "% teórico / " + pctPractico + "% práctico. Da una ÚNICA respuesta " +
                         "(sin opciones A/B) cuya proporción de teoría y práctica refleje ese perfil " +
                         "(por ejemplo, si es mayoritariamente práctico, da un resumen teórico muy breve y " +
                         "céntrate en un ejemplo o ejercicio guiado similar).";
-                if (tocaRecalibrar) {
-                    instruccionFase += " Termina tu respuesta añadiendo, en una línea aparte, esta pregunta exacta: " +
-                            "\"¿Qué tan útil te ha sido esta respuesta? ¿Para las próximas prefieres que profundice " +
-                            "más en la teoría o que ponga más ejemplos prácticos?\"";
-                    perfil.marcarEsperandoRecalibracion(true);
-                }
             }
 
             
@@ -150,8 +169,14 @@ public class ServicioTutor {
                     "  \"idUsuario\": \"" + username + "\",\n" +
                     "  \"iteracion\": " + iteracion + ",\n" +
                     "  \"teorico\": " + perfil.porcentajeTeorico() + ",\n" +
-                    "  \"practico\": " + perfil.porcentajePractico() + "\n" +
+                    "  \"practico\": " + perfil.porcentajePractico() + ",\n" +
+                    "  \"temaSeleccionado\": \"" + temaNombre + "\"\n" +
                     "}\n\n" +
+                    (temaConcreto
+                        ? "El alumno está trabajando ahora mismo sobre el tema «" + temaNombre + "». Si te pregunta de "
+                          + "forma vaga (\"este tema\", \"esto\", \"de qué va\", \"¿qué sabes de esto?\"), entiende que se "
+                          + "refiere a ese tema y respóndele sobre él sin volver a preguntarle cuál es.\n\n"
+                        : "") +
                     "Utiliza el siguiente contexto extraído de los apuntes oficiales para guiarle. " +
                     "Si es oportuno, menciónale sutilmente el nombre del archivo fuente del que debe repasar la teoría.\n\n" +
                     "Contexto de los apuntes:" + MARCA_INI + contexto + MARCA_FIN + "\n" +
@@ -179,17 +204,11 @@ public class ServicioTutor {
             Long consultaId = servicioRegistroConsultas.registrarChat(username, asignaturaId, peticion.tema(), ultimaPregunta,
                     textoRespuesta, fase, iteracion);
 
-            ServicioEstancamiento.Evaluacion estanc = servicioEstancamiento.evaluar(
-                    username, asignaturaId, AvisoEstancamiento.Ambito.CHAT, peticion.tema(), ultimaPregunta);
-
             return RespuestaChat.de(
                     textoRespuesta != null ? textoRespuesta : "⚠️ Error en la respuesta.",
                     fase,
-                    esCalibracion,
-                    consultaId != null ? consultaId : 0L,
-                    estanc.estancado(),
-                    estanc.avisoId() != null ? estanc.avisoId() : 0L,
-                    estanc.estancado() ? estanc.mensaje() : null);
+                    mostrarOpciones,
+                    consultaId != null ? consultaId : 0L);
         } catch (Exception t) {
             log.error("Error inesperado en consultarTutor: ", t);
             return RespuestaChat.error(

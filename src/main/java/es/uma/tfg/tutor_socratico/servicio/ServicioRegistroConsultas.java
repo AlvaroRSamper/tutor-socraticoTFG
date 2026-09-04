@@ -14,9 +14,11 @@ import java.time.LocalDateTime;
 public class ServicioRegistroConsultas {
 
     private final RegistroConsultaRepositorio repositorio;
+    private final es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio perfilAprendizajeServicio;
 
-    public ServicioRegistroConsultas(RegistroConsultaRepositorio repositorio) {
+    public ServicioRegistroConsultas(RegistroConsultaRepositorio repositorio, es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio perfilAprendizajeServicio) {
         this.repositorio = repositorio;
+        this.perfilAprendizajeServicio = perfilAprendizajeServicio;
     }
 
     public Long registrarChat(String username, String asignaturaId, String tema, String pregunta,
@@ -52,6 +54,24 @@ public class ServicioRegistroConsultas {
             reg.setValoracion(valoracion);
             reg.setComentarioValoracion(comentario);
             repositorio.save(reg);
+            
+            if (valoracion != null) {
+                es.uma.tfg.tutor_socratico.perfil.PerfilAlumno perfil = perfilAprendizajeServicio.obtenerOCrear(reg.getUsername(), reg.getAsignaturaId());
+                if (valoracion == -1) {
+                    perfil.setRachaNoUtil(perfil.rachaNoUtil() + 1);
+                    perfil.incrementarNoUtil();
+                } else if (valoracion == 1) {
+                    if (perfil.isInvertido()) {
+                        perfil.intercambiarPreferencias();
+                    }
+                    perfil.setRachaNoUtil(0);
+                    perfil.incrementarUtil();
+                } else {
+                    perfil.setRachaNoUtil(0);
+                }
+                perfilAprendizajeServicio.persistir(reg.getUsername(), reg.getAsignaturaId(), perfil);
+            }
+            
             return true;
         }).orElse(false);
     }

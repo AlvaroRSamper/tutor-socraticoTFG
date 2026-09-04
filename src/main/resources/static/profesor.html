@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel del Profesor · Tutor Socrático</title>
+    <link rel="icon" type="image/png" href="logo-tutor.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- DOMPurify: sanea el HTML generado por Markdown antes de inyectarlo (anti-XSS) -->
@@ -42,7 +43,7 @@
             </div>
             <div class="tarjeta-metrica" style="cursor: pointer; border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, rgba(22,27,34,0.85));" onclick="abrirRadarDocente()">
                 <div class="metrica-valor" style="font-size: 1.8rem; display: flex; align-items: center; gap: 8px;">📡 Radar Docente</div>
-                <div class="metrica-etiqueta" style="color: #fff; font-weight: 600;">Informe de clase y alumnos estancados</div>
+                <div class="metrica-etiqueta" style="color: #fff; font-weight: 600;">Informe de clase y alumnos con abandono</div>
             </div>
         </div>
 
@@ -79,9 +80,17 @@
                            style="padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff;">
                 </div>
                 <textarea id="prop-enunciado" rows="4" placeholder="Enunciado del ejercicio…" required
-                          style="width:100%; padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff; box-sizing:border-box; resize:vertical; margin-bottom:14px;"></textarea>
+                          style="width:100%; padding:10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff; box-sizing:border-box; resize:vertical; margin-bottom:8px;"></textarea>
 
-                <label style="display:block; font-weight:600; color:#c9d1d9; margin-bottom:8px;">Microhitos</label>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+                    <input type="file" id="prop-archivo" accept=".pdf,.md,.markdown,.txt,text/markdown,text/plain,application/pdf" style="color:#c9d1d9; flex:1; min-width:200px;">
+                    <button type="button" class="btn-ejercicio" onclick="cargarEnunciadoDesdeArchivo()" title="Extrae el enunciado de un PDF, Markdown o TXT y lo pone arriba para que lo revises.">📄 Cargar enunciado desde archivo</button>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-weight:600; color:#c9d1d9;">Microhitos</label>
+                    <button type="button" class="btn-ejercicio" id="btn-generar-hitos" onclick="generarMicrohitosIa()" title="Genera los microhitos a partir del enunciado. Podrás revisarlos y editarlos antes de publicar.">🪄 Generar microhitos con IA</button>
+                </div>
                 <div id="prop-hitos"></div>
                 <button type="button" class="btn-ejercicio" onclick="agregarFilaHito()" style="margin-top:6px;">+ Añadir microhito</button>
 
@@ -182,15 +191,36 @@
             </div>
 
             <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: 500; margin-bottom: 4px; color: #c9d1d9;">🚦 Sensibilidad de Estancamiento</label>
+                <label style="display: block; font-weight: 500; margin-bottom: 4px; color: #c9d1d9;">⚙️ Sensibilidad de Abandono</label>
                 <p style="margin: 0 0 12px; font-size: 0.8rem; color: #8b949e;">
-                    Nº de iteraciones sobre el mismo tema/hito antes de avisar al alumno. Menos = más sensible.
+                    Nº mínimo de consultas previas para considerar que un alumno estaba activo antes de dejar de usar el tutor. Menos = más sensible.
                 </p>
                 <div class="sensibilidad-wrap">
                     <input type="range" id="input-sensibilidad-modal" min="4" max="8" step="1" value="5"
                            oninput="actualizarValorSensibilidad(this.value)">
                     <span class="sensibilidad-valor" id="valor-sensibilidad-modal">5 preguntas</span>
                 </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 500; margin-bottom: 4px; color: #c9d1d9;">📧 Informe semanal por email</label>
+                <p style="margin: 0 0 12px; font-size: 0.8rem; color: #8b949e;">
+                    Recibe cada semana un informe del Radar Docente con las preguntas de tus alumnos. Deja el día en "No enviar" para desactivarlo.
+                </p>
+                <input type="email" id="input-email-modal" placeholder="tu.correo@uma.es"
+                       style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #fff; box-sizing: border-box; margin-bottom: 10px;">
+                <select id="select-dia-informe-modal"
+                        style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #fff; box-sizing: border-box;">
+                    <option value="">No enviar</option>
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miércoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sábado</option>
+                    <option value="7">Domingo</option>
+                </select>
+                <button type="button" onclick="probarInformeSemanal()" class="btn-ejercicio" style="margin-top: 10px;">Enviar informe de prueba ahora</button>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #30363d; padding-top: 15px;">
@@ -213,6 +243,17 @@
         <!-- Selector de las dos opciones principales -->
         <div id="radar-chooser">
             <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 8px;">¿Qué quieres consultar?</p>
+            <div style="display:flex; align-items:center; gap:8px; margin:0 0 14px;">
+                <label for="radar-semanas" style="color: var(--text-muted); font-size: 0.85rem;">📊 Periodo del informe:</label>
+                <select id="radar-semanas" style="padding:6px 10px; background:#0d1117; border:1px solid var(--border-color); border-radius:6px; color:#fff;">
+                    <option value="1">Última semana</option>
+                    <option value="2" selected>Últimas 2 semanas</option>
+                    <option value="3">Últimas 3 semanas</option>
+                    <option value="4">Últimas 4 semanas</option>
+                    <option value="5">Últimas 5 semanas</option>
+                    <option value="6">Últimas 6 semanas</option>
+                </select>
+            </div>
             <div class="radar-chooser">
                 <button class="radar-chooser-btn" onclick="radarGenerarInforme()">
                     <span class="ico">📊</span>
@@ -221,8 +262,8 @@
                 </button>
                 <button class="radar-chooser-btn" onclick="radarAlumnosProblemas()">
                     <span class="ico">🚦</span>
-                    <span class="tit">Alumnos con Problemas</span>
-                    <span class="sub">Alumnos que han hecho saltar el algoritmo de estancamiento y en qué tema/hito.</span>
+                    <span class="tit">Alumnos con Abandono</span>
+                    <span class="sub">Alumnos que han abandonado el progreso en algún tema o hito.</span>
                 </button>
             </div>
         </div>

@@ -41,22 +41,28 @@ public class ServicioIngesta {
     }
 
     public int configurarAsignatura(String asignaturaId, String systemPrompt, MultipartFile[] archivos) {
-        return configurarAsignatura(asignaturaId, null, systemPrompt, null, null, archivos);
+        return configurarAsignatura(asignaturaId, null, systemPrompt, null, null, null, null, archivos);
     }
 
     public int configurarAsignatura(String asignaturaId, String titulo, String systemPrompt, String colorTema, MultipartFile[] archivos) {
-        return configurarAsignatura(asignaturaId, titulo, systemPrompt, colorTema, null, archivos);
+        return configurarAsignatura(asignaturaId, titulo, systemPrompt, colorTema, null, null, null, archivos);
     }
 
     public int configurarAsignatura(String asignaturaId, String titulo, String systemPrompt, String colorTema,
-                                    Integer sensibilidad, MultipartFile[] archivos) {
+                                    Integer sensibilidad, String emailProfesor, Integer diaInformeSemanal,
+                                    MultipartFile[] archivos) {
         Asignatura asigActual = asignaturaRepositorio.findById(asignaturaId).orElse(null);
         String temasActuales = (asigActual != null && asigActual.getTemas() != null) ? asigActual.getTemas() : "";
         String tituloActual = (titulo != null && !titulo.isBlank()) ? titulo : ((asigActual != null && asigActual.getTitulo() != null) ? asigActual.getTitulo() : "Tutor Socrático");
         String colorActual = (colorTema != null && !colorTema.isBlank()) ? colorTema : ((asigActual != null && asigActual.getColorTema() != null) ? asigActual.getColorTema() : "github-dark");
-        
+
         Integer sensibilidadActual = (sensibilidad != null) ? sensibilidad
                 : ((asigActual != null && asigActual.getSensibilidad() != null) ? asigActual.getSensibilidad() : 5);
+
+        String emailActual = (emailProfesor != null) ? (emailProfesor.isBlank() ? null : emailProfesor.trim())
+                : (asigActual != null ? asigActual.getEmailProfesor() : null);
+        Integer diaActual = (diaInformeSemanal != null) ? acotarDiaSemana(diaInformeSemanal)
+                : (asigActual != null ? asigActual.getDiaInformeSemanal() : null);
 
         if (archivos != null && archivos.length > 0) {
             List<String> listaTemas = new ArrayList<>();
@@ -85,12 +91,19 @@ public class ServicioIngesta {
                 .colorTema(colorActual)
                 .temas(temasActuales)
                 .sensibilidad(sensibilidadActual)
+                .emailProfesor(emailActual)
+                .diaInformeSemanal(diaActual)
                 .build());
 
         if (archivos == null || archivos.length == 0) {
             return 0;
         }
         return ingerirApuntes(asignaturaId, archivos);
+    }
+
+    private Integer acotarDiaSemana(Integer dia) {
+        if (dia == null || dia < 1 || dia > 7) return null;
+        return dia;
     }
 
     public boolean borrarArchivo(String asignaturaId, String nombreArchivo) {

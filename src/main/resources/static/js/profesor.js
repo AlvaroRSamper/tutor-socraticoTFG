@@ -91,7 +91,10 @@
 
             const etiqueta = document.createElement('div');
             etiqueta.className = 'barra-etiqueta';
-            etiqueta.textContent = p.alumno;
+            const racha = p.racha > 0
+                ? ` <span title="Racha actual de días seguidos" style="color:#f0883e;font-weight:600;font-size:.85rem;margin-left:6px;white-space:nowrap;">🔥${p.racha}</span>`
+                : '';
+            etiqueta.innerHTML = escaparHtmlP(p.alumno) + racha;
 
             const barra = document.createElement('div');
             barra.className = 'barra-dual';
@@ -116,9 +119,19 @@
             muestras.className = 'barra-muestras';
             muestras.textContent = p.muestras + (p.muestras === 1 ? ' respuesta' : ' respuestas');
 
+            const utilidad = document.createElement('div');
+            utilidad.className = 'barra-utilidad';
+            utilidad.style.marginLeft = '20px';
+            utilidad.style.color = '#10b981';
+            utilidad.style.fontWeight = '500';
+            utilidad.style.width = '75px';
+            utilidad.style.textAlign = 'right';
+            utilidad.textContent = p.porcentajeUtil + '% útil';
+
             fila.appendChild(etiqueta);
             fila.appendChild(barra);
             fila.appendChild(muestras);
+            fila.appendChild(utilidad);
             contenedor.appendChild(fila);
         });
     }
@@ -260,6 +273,10 @@
                 aplicarTemaIde(tema);
                 const inpSens = document.getElementById('input-sensibilidad-modal');
                 if (inpSens) { inpSens.value = info.sensibilidad || 5; actualizarValorSensibilidad(inpSens.value); }
+                const inpEmail = document.getElementById('input-email-modal');
+                if (inpEmail) inpEmail.value = info.emailProfesor || '';
+                const selDia = document.getElementById('select-dia-informe-modal');
+                if (selDia) selDia.value = info.diaInformeSemanal != null ? String(info.diaInformeSemanal) : '';
 
                 const listaCont = document.getElementById('lista-archivos-subidos');
                 if (listaCont) {
@@ -335,11 +352,15 @@
         const archivos = document.getElementById('input-apuntes-modal').files;
 
         const inpSens = document.getElementById('input-sensibilidad-modal');
+        const inpEmail = document.getElementById('input-email-modal');
+        const selDia = document.getElementById('select-dia-informe-modal');
         const datos = new FormData();
         datos.append('titulo', titulo);
         datos.append('systemPrompt', prompt);
         datos.append('colorTema', colorTema);
         if (inpSens) datos.append('sensibilidad', inpSens.value);
+        if (inpEmail) datos.append('emailProfesor', inpEmail.value.trim());
+        if (selDia) datos.append('diaInformeSemanal', selDia.value === '' ? '0' : selDia.value);
         for (let i = 0; i < archivos.length; i++) {
             datos.append('archivos', archivos[i]);
         }
@@ -417,7 +438,9 @@
         const listo = document.getElementById('contenido-radar-listo');
         if (carga) carga.style.display = 'block';
         try {
-            const res = await fetch('/api/profesor/asignatura/radar-confusion');
+            const sel = document.getElementById('radar-semanas');
+            const semanas = sel ? sel.value : '2';
+            const res = await fetch('/api/profesor/asignatura/radar-confusion?semanas=' + encodeURIComponent(semanas));
             if (!comprobarSesion(res)) return;
             const json = await res.json();
             textoRadarMdActual = json.analisis || "No se pudo generar el análisis del radar.";
@@ -451,11 +474,11 @@
             if (!comprobarSesion(res)) return;
             const lista = await res.json();
             if (!Array.isArray(lista) || lista.length === 0) {
-                wrap.innerHTML = '<p class="texto-vacio">🎉 Ningún alumno estancado ahora mismo.</p>';
+                wrap.innerHTML = '<p class="texto-vacio">🎉 Ningún alumno con abandono ahora mismo.</p>';
                 return;
             }
             let html = '<div class="tabla-scroll"><table><thead><tr>' +
-                '<th>Alumno</th><th>Asignatura</th><th>Ámbito</th><th>Tema / Hito atascado</th><th>Iter.</th><th>Acción</th>' +
+                '<th>Alumno</th><th>Asignatura</th><th>Ámbito</th><th>Último tema</th><th>Consultas previas</th><th>Acción</th>' +
                 '</tr></thead><tbody>';
             lista.forEach(a => {
                 const ambito = a.ambito === 'RETO' ? 'Reto' : 'Chat';
@@ -486,6 +509,29 @@
             radarAlumnosProblemas();
         } catch (e) {
             console.error('Error resolviendo aviso', e);
+        }
+    };
+
+    window.probarInformeSemanal = async () => {
+        const estado = document.getElementById('estado-asignatura-modal');
+        const email = document.getElementById('input-email-modal');
+        if (email && !email.value.trim()) {
+            if (estado) estado.textContent = 'Introduce y guarda tu correo antes de enviar el informe de prueba.';
+            return;
+        }
+        if (estado) estado.textContent = 'Enviando informe de prueba…';
+        try {
+            const res = await fetch('/api/profesor/asignatura/informe-semanal/probar', {
+                method: 'POST',
+                headers: { 'X-XSRF-TOKEN': leerCookie('XSRF-TOKEN') }
+            });
+            if (!comprobarSesion(res)) return;
+            const data = await res.json();
+            if (estado) estado.textContent = data.exito
+                ? 'Informe de prueba enviado. Revisa tu bandeja de entrada.'
+                : 'No se pudo enviar. Guarda primero el correo y revisa la configuración SMTP.';
+        } catch (e) {
+            if (estado) estado.textContent = 'Error de conexión al enviar el informe.';
         }
     };
 

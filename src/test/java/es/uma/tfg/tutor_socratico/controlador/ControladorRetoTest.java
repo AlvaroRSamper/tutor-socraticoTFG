@@ -89,7 +89,7 @@ class ControladorRetoTest {
     @Test
     void chatConHistorialValidoDevuelve200() throws Exception {
         when(servicioReto.chatReto(any(), anyString(), anyString()))
-                .thenReturn(new RespuestaChatReto("Pista socrática", false, null, null));
+                .thenReturn(new RespuestaChatReto("Pista socrática"));
 
         mockMvc.perform(post("/api/reto/chat")
                         .with(user("12345").roles("ALUMNO"))

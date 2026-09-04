@@ -21,7 +21,7 @@ public class PerfilAprendizajeServicio {
         String asig = normalizarAsignatura(asignaturaId);
         return repositorio.findByUsernameAndAsignaturaId(username, asig)
                 .map(r -> new PerfilAlumno(r.getContadorTeorico(), r.getContadorPractico(),
-                        r.getIteracionChat(), r.isEsperandoRecalibracion()))
+                        r.getIteracionChat(), r.isEsperandoRecalibracion(), r.getUltimaIteracionRecalibracion(), r.getRachaNoUtil(), r.getContadorUtil(), r.getContadorNoUtil()))
                 .orElseGet(PerfilAlumno::new);
     }
 
@@ -30,8 +30,10 @@ public class PerfilAprendizajeServicio {
         PerfilAlumno perfil = obtenerOCrear(username, asig);
         if ("A".equalsIgnoreCase(opcion)) {
             perfil.incrementarTeorico();
+            perfil.setRachaNoUtil(0);
         } else if ("B".equalsIgnoreCase(opcion)) {
             perfil.incrementarPractico();
+            perfil.setRachaNoUtil(0);
         } else {
             return;
         }
@@ -73,6 +75,10 @@ public class PerfilAprendizajeServicio {
         reg.setContadorPractico(perfil.contadorPractico());
         reg.setIteracionChat(perfil.iteracionChat());
         reg.setEsperandoRecalibracion(perfil.esperandoRecalibracion());
+        reg.setUltimaIteracionRecalibracion(perfil.ultimaIteracionRecalibracion());
+        reg.setRachaNoUtil(perfil.rachaNoUtil());
+        reg.setContadorUtil(perfil.contadorUtil());
+        reg.setContadorNoUtil(perfil.contadorNoUtil());
         repositorio.save(reg);
     }
 

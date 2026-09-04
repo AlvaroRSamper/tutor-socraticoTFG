@@ -54,7 +54,7 @@ class ControladorTutorTest {
     @Test
     void chatConHistorialValidoDevuelve200() throws Exception {
         when(servicioTutor.consultarTutor(any(), anyString(), anyString()))
-                .thenReturn(RespuestaChat.de("¿Qué crees que ocurre aquí?", "CALIBRACION", true, 7L, false, 0L, null));
+                .thenReturn(RespuestaChat.de("¿Qué crees que ocurre aquí?", "CALIBRACION", true, 7L));
 
         mockMvc.perform(post("/api/tutor/chat")
                         .with(user("12345").roles("ALUMNO"))
@@ -66,21 +66,6 @@ class ControladorTutorTest {
                 .andExpect(jsonPath("$.fase").value("CALIBRACION"))
                 .andExpect(jsonPath("$.mostrarOpciones").value(true))
                 .andExpect(jsonPath("$.consultaId").value(7));
-    }
-
-    @Test
-    void chatSinEstancamientoOmiteMensajeEstancamiento() throws Exception {
-        // @JsonInclude(NON_NULL): sin estancamiento, la clave mensajeEstancamiento no aparece.
-        when(servicioTutor.consultarTutor(any(), anyString(), anyString()))
-                .thenReturn(RespuestaChat.de("respuesta", "PERMANENTE", false, 1L, false, 0L, null));
-
-        mockMvc.perform(post("/api/tutor/chat")
-                        .with(user("12345").roles("ALUMNO"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"historial\":[{\"role\":\"user\",\"content\":\"hola\"}],\"tema\":\"General\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mensajeEstancamiento").doesNotExist());
     }
 
     @Test

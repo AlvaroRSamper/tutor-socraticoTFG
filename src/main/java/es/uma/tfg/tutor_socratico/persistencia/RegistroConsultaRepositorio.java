@@ -15,6 +15,23 @@ public interface RegistroConsultaRepositorio extends JpaRepository<RegistroConsu
         long getTotal();
     }
 
+    interface ActividadAlumno {
+        String getUsername();
+        long getPrevias();
+        long getRecientes();
+    }
+
+    @Query("""
+        select r.username as username,
+               sum(case when r.fechaHora < :inicioReciente then 1 else 0 end) as previas,
+               sum(case when r.fechaHora >= :inicioReciente then 1 else 0 end) as recientes
+        from RegistroConsulta r
+        where r.asignaturaId = :asignaturaId and r.fechaHora >= :inicioPrevia
+        group by r.username""")
+    List<ActividadAlumno> resumenActividad(@Param("asignaturaId") String asignaturaId,
+                                           @Param("inicioPrevia") LocalDateTime inicioPrevia,
+                                           @Param("inicioReciente") LocalDateTime inicioReciente);
+
     @Query("""
         select r from RegistroConsulta r
         where r.asignaturaId = :asignaturaId
@@ -41,6 +58,8 @@ public interface RegistroConsultaRepositorio extends JpaRepository<RegistroConsu
 
     long countByAsignaturaId(String asignaturaId);
 
-    @Query("select r from RegistroConsulta r where r.asignaturaId = :asignaturaId and r.tipo = 'CHAT' order by r.fechaHora desc")
-    List<RegistroConsulta> buscarUltimasConsultasChat(@Param("asignaturaId") String asignaturaId, Pageable pageable);
+    @Query("select r from RegistroConsulta r where r.asignaturaId = :asignaturaId and r.tipo = 'CHAT' and r.fechaHora >= :desde order by r.fechaHora desc")
+    List<RegistroConsulta> buscarChatDesde(@Param("asignaturaId") String asignaturaId,
+                                           @Param("desde") LocalDateTime desde,
+                                           Pageable pageable);
 }

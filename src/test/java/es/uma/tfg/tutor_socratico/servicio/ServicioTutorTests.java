@@ -36,7 +36,6 @@ class ServicioTutorTests {
     private EmbeddingStore<TextSegment> embeddingStore;
     private PerfilAprendizajeServicio perfilAprendizajeServicio;
     private ServicioRegistroConsultas servicioRegistroConsultas;
-    private ServicioEstancamiento servicioEstancamiento;
     private ServicioTutor servicioTutor;
 
     @BeforeEach
@@ -73,12 +72,9 @@ class ServicioTutorTests {
 
         servicioRegistroConsultas = mock(ServicioRegistroConsultas.class);
 
-        servicioEstancamiento = mock(ServicioEstancamiento.class);
-        when(servicioEstancamiento.evaluar(any(), any(), any(), any(), any()))
-                .thenReturn(new ServicioEstancamiento.Evaluacion(false, null, 0, 5, null));
-
         servicioTutor = new ServicioTutor(chatLanguageModel, embeddingModel, embeddingStore,
-                perfilAprendizajeServicio, servicioRegistroConsultas, asignaturaRepositorio, servicioEstancamiento);
+                perfilAprendizajeServicio, servicioRegistroConsultas, asignaturaRepositorio);
+        servicioTutor.setFuenteAleatoria(() -> 1.0);
     }
 
     private PeticionChat peticionConPregunta(String pregunta) {

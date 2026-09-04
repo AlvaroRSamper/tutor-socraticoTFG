@@ -34,9 +34,9 @@ public class ManejadorExcepciones {
     }
 
     
-    @ExceptionHandler(RecursoNoEncontradoException.class)
+    @ExceptionHandler({RecursoNoEncontradoException.class, org.springframework.web.servlet.resource.NoResourceFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> manejarNoEncontrado(RecursoNoEncontradoException e) {
+    public Map<String, String> manejarNoEncontrado(Exception e) {
         log.warn("Recurso no encontrado: {}", e.getMessage());
         return Map.of("mensaje", "El recurso solicitado no existe o no está disponible.");
     }
@@ -58,11 +58,17 @@ public class ManejadorExcepciones {
     }
 
     
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> manejarArgumentoInvalido(IllegalArgumentException e) {
+        log.warn("Petición inválida: {}", e.getMessage());
+        return Map.of("mensaje", e.getMessage() != null ? e.getMessage() : "Petición inválida.");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> manejarExcepcionGeneral(Exception e) {
         log.error("Error inesperado en el servidor: ", e);
-        // TEMPORAL PARA DEBUG: Mostramos el error real al cliente porque no tienes acceso a la consola
-        return Map.of("mensaje", "Error real del servidor (Debug): " + e.getMessage() + " | Causa: " + e.toString());
+        return Map.of("mensaje", "Ha ocurrido un error inesperado en el servidor. Inténtalo de nuevo más tarde.");
     }
 }
