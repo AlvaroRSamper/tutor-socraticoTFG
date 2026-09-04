@@ -22,7 +22,9 @@ import es.uma.tfg.tutor_socratico.dto.Mensaje;
 import es.uma.tfg.tutor_socratico.dto.MicrohitoDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionChatReto;
 import es.uma.tfg.tutor_socratico.dto.PeticionCrearEjercicioIa;
+import es.uma.tfg.tutor_socratico.dto.PeticionGenerarTest;
 import es.uma.tfg.tutor_socratico.dto.PeticionPublicarEjercicio;
+import es.uma.tfg.tutor_socratico.dto.PreguntaTestDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionRecargar;
 import es.uma.tfg.tutor_socratico.dto.PeticionSubirEjercicio;
 import es.uma.tfg.tutor_socratico.dto.AlumnoRadarDTO;
@@ -40,6 +42,7 @@ import es.uma.tfg.tutor_socratico.persistencia.Microhito;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroResolucion;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroResolucionRepositorio;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -131,6 +134,7 @@ public class ServicioReto {
             + "pseudocódigo parcial o un fragmento mínimo. Tu meta es que aprenda a resolverlo por sí mismo.";
 
     private final ChatLanguageModel chatLanguageModel;
+    private final ChatLanguageModel chatLanguageModelExtenso;
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final EjercicioRepositorio ejercicioRepositorio;
@@ -138,11 +142,13 @@ public class ServicioReto {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ServicioReto(ChatLanguageModel chatLanguageModel,
+                        @Qualifier("chatLanguageModelExtenso") ChatLanguageModel chatLanguageModelExtenso,
                         EmbeddingModel embeddingModel,
                         EmbeddingStore<TextSegment> embeddingStore,
                         EjercicioRepositorio ejercicioRepositorio,
                         RegistroResolucionRepositorio resolucionRepositorio) {
         this.chatLanguageModel = chatLanguageModel;
+        this.chatLanguageModelExtenso = chatLanguageModelExtenso;
         this.embeddingModel = embeddingModel;
         this.embeddingStore = embeddingStore;
         this.ejercicioRepositorio = ejercicioRepositorio;
@@ -195,6 +201,61 @@ public class ServicioReto {
         ejercicioRepositorio.save(ejercicio);
 
         return detalleEjercicio(ejercicio);
+    }
+
+    public List<PreguntaTestDTO> generarTest(PeticionGenerarTest peticion, String username, String asignaturaId) {
+        String asig = normalizarAsignatura(asignaturaId);
+        int n = Math.max(1, Math.min(30, peticion.numPreguntas()));
+        String contexto = contextoRag("teoria conceptos definiciones " + peticion.tema(), peticion.tema(), asig, 6, username);
+
+        String instruccion = String.format(
+                "Genera un test de teoría de %d preguntas de dificultad %s sobre \"%s\", basándote " +
+                "EXCLUSIVAMENTE en el siguiente material del temario:%n<<<DATOS>>>%n%s%n<<<FIN_DATOS>>>%n%n" +
+                "Cada pregunta debe tener 4 opciones y una sola correcta. Si el temario es de Programación, puedes incluir preguntas de rellenar el codigo con la respuesta correcta" + "La explicación debe ser breve " +
+                "(1-2 frases) y aclarar por qué la respuesta correcta lo es. " +
+                "Responde EXCLUSIVAMENTE con un array JSON válido, sin markdown ni texto adicional, con este formato:%n" +
+                "[{\"enunciado\":\"<pregunta>\",\"opciones\":[\"<a>\",\"<b>\",\"<c>\",\"<d>\"]," +
+                "\"correcta\":<indice 0-3>,\"explicacion\":\"<por qué es correcta>\"}]",
+                n, peticion.dificultad(), peticion.tema(), contexto);
+
+        String sistema = "Eres un profesor universitario que elabora preguntas de test de opción múltiple para " +
+                "evaluar la comprensión teórica. " + ServicioTutor.DIRECTIVA_ANTI_INYECCION;
+
+        List<PreguntaTestDTO> preguntas = new ArrayList<>();
+        try {
+            Response<AiMessage> r = chatLanguageModelExtenso.generate(
+                    SystemMessage.from(sistema), UserMessage.from(instruccion));
+            String bruto = (r != null && r.content() != null) ? r.content().text() : "";
+            JsonNode arr = extraerJsonArray(bruto);
+            if (arr != null && arr.isArray()) {
+                for (JsonNode nodo : arr) {
+                    PreguntaTestDTO p = parsearPregunta(nodo);
+                    if (p != null) preguntas.add(p);
+                    if (preguntas.size() >= n) break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error generando test con IA: {}", e.getMessage(), e);
+        }
+
+        if (preguntas.isEmpty()) {
+            throw new IllegalArgumentException("No se ha podido generar el test en este momento. Inténtalo de nuevo.");
+        }
+        return preguntas;
+    }
+
+    private PreguntaTestDTO parsearPregunta(JsonNode nodo) {
+        String enunciado = nodo.path("enunciado").asText("");
+        JsonNode opcionesNodo = nodo.path("opciones");
+        if (enunciado.isBlank() || !opcionesNodo.isArray() || opcionesNodo.size() < 2) return null;
+
+        List<String> opciones = new ArrayList<>();
+        for (JsonNode o : opcionesNodo) opciones.add(o.asText(""));
+
+        int correcta = nodo.path("correcta").asInt(0);
+        if (correcta < 0 || correcta >= opciones.size()) correcta = 0;
+
+        return new PreguntaTestDTO(enunciado, opciones, correcta, nodo.path("explicacion").asText(""));
     }
 
     @Transactional

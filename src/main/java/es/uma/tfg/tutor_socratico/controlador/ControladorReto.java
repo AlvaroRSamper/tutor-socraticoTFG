@@ -6,6 +6,8 @@ import es.uma.tfg.tutor_socratico.dto.EjercicioRadarDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionChatReto;
 import es.uma.tfg.tutor_socratico.dto.PeticionCrearEjercicioIa;
 import es.uma.tfg.tutor_socratico.dto.PeticionGenerarMicrohitos;
+import es.uma.tfg.tutor_socratico.dto.PeticionGenerarTest;
+import es.uma.tfg.tutor_socratico.dto.PreguntaTestDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionIniciarReto;
 import es.uma.tfg.tutor_socratico.dto.MicrohitoDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionPublicarEjercicio;
@@ -57,6 +59,12 @@ public class ControladorReto {
     public DetalleEjercicioDTO crearIa(@Valid @RequestBody PeticionCrearEjercicioIa peticion,
                                        Authentication auth, HttpSession session) {
         return servicioReto.crearEjercicioIa(peticion, auth.getName(), asignaturaDe(session));
+    }
+
+    @PostMapping("/test")
+    public List<PreguntaTestDTO> generarTest(@Valid @RequestBody PeticionGenerarTest peticion,
+                                             Authentication auth, HttpSession session) {
+        return servicioReto.generarTest(peticion, auth.getName(), asignaturaDe(session));
     }
 
     @PostMapping("/subir")

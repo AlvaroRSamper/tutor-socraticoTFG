@@ -37,21 +37,29 @@ function cerrarModalReto() {
     document.getElementById('modal-reto').style.display = 'none';
 }
 
+function retoMostrarCarpeta(mostrar) {
+    const carpeta = document.querySelector('#modal-reto .reto-carpeta');
+    if (carpeta) carpeta.style.display = mostrar ? '' : 'none';
+}
+
 function retoVolverOpciones() {
-    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-cargando']
+    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-test', 'reto-cargando']
         .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     document.querySelector('#modal-reto .reto-opciones').style.display = 'grid';
+    retoMostrarCarpeta(true);
 }
 
 function retoMostrarSeccion(id) {
     document.querySelector('#modal-reto .reto-opciones').style.display = 'none';
-    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos']
+    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-test']
         .forEach(s => { const el = document.getElementById(s); if (el) el.style.display = (s === id ? 'block' : 'none'); });
+    retoMostrarCarpeta(id !== 'reto-form-test');
 }
 
 function retoElegirCrear() { retoMostrarSeccion('reto-form-crear'); }
 function retoElegirSubir() { retoMostrarSeccion('reto-form-subir'); }
 function retoElegirPropuestos() { retoMostrarSeccion('reto-form-propuestos'); retoCargarPropuestos(); }
+function retoElegirTest() { retoMostrarSeccion('reto-form-test'); testPoblarTemas(); }
 
 function retoPoblarTemas() {
     const sel = document.getElementById('reto-select-tema');
@@ -68,6 +76,7 @@ function retoPoblarTemas() {
 function retoMostrarCargando(texto) {
     retoVolverOpciones();
     document.querySelector('#modal-reto .reto-opciones').style.display = 'none';
+    retoMostrarCarpeta(false);
     const c = document.getElementById('reto-cargando');
     document.getElementById('reto-cargando-texto').innerText = texto || 'Preparando tu reto…';
     if (c) c.style.display = 'block';
@@ -531,6 +540,146 @@ function mostrarPantallaExito(pct) {
 function cerrarPantallaExito() {
     document.getElementById('pantalla-exito').classList.remove('activo');
     salirReto();
+}
+
+/* ==========================================================================
+ *  Test de teoría (opción múltiple, práctica efímera)
+ * ========================================================================== */
+
+const testEstado = {
+    preguntas: [],
+    indice: 0,
+    aciertos: 0,
+    respondida: false
+};
+
+function testPoblarTemas() {
+    const sel = document.getElementById('test-select-tema');
+    if (!sel) return;
+    sel.innerHTML = '';
+    document.querySelectorAll('.topic-item').forEach(li => {
+        const opt = document.createElement('option');
+        opt.value = li.getAttribute('data-file');
+        opt.text = li.innerText;
+        sel.appendChild(opt);
+    });
+}
+
+async function testGenerar() {
+    const tema = document.getElementById('test-select-tema').value;
+    const dificultad = document.getElementById('test-select-dificultad').value;
+    const numPreguntas = parseInt(document.getElementById('test-select-num').value, 10) || 10;
+    retoMostrarCargando('La IA está preparando tu test de teoría…');
+    try {
+        const res = await fetch('/api/reto/test', {
+            method: 'POST',
+            headers: cabecerasConCsrf({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ tema, dificultad, numPreguntas })
+        });
+        const data = await res.json();
+        if (!res.ok) return retoErrorModal(data.mensaje);
+        if (!Array.isArray(data) || data.length === 0) return retoErrorModal('No se han podido generar preguntas. Inténtalo de nuevo.');
+        arrancarTest(data);
+    } catch (e) { retoErrorModal('Error de conexión al generar el test.'); }
+}
+
+function arrancarTest(preguntas) {
+    testEstado.preguntas = preguntas;
+    testEstado.indice = 0;
+    testEstado.aciertos = 0;
+    testEstado.respondida = false;
+
+    cerrarModalReto();
+    document.getElementById('pantalla-test').classList.add('activo');
+    testRenderPregunta();
+}
+
+function testRenderPregunta() {
+    const p = testEstado.preguntas[testEstado.indice];
+    const total = testEstado.preguntas.length;
+    testEstado.respondida = false;
+
+    document.getElementById('test-progreso').innerText = (testEstado.indice + 1) + ' / ' + total;
+    document.getElementById('test-barra').style.width = Math.round((testEstado.indice / total) * 100) + '%';
+    document.getElementById('test-enunciado').innerHTML = escaparHtml(p.enunciado);
+
+    const cont = document.getElementById('test-opciones');
+    cont.innerHTML = '';
+    p.opciones.forEach((texto, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'test-opcion';
+        btn.innerHTML = '<span class="letra">' + String.fromCharCode(65 + i) + '</span>' + escaparHtml(texto);
+        btn.onclick = () => testResponder(i, btn);
+        cont.appendChild(btn);
+    });
+
+    const exp = document.getElementById('test-explicacion');
+    exp.style.display = 'none';
+    exp.innerHTML = '';
+    document.getElementById('test-btn-siguiente').style.display = 'none';
+}
+
+function testResponder(elegida, btn) {
+    if (testEstado.respondida) return;
+    testEstado.respondida = true;
+    const p = testEstado.preguntas[testEstado.indice];
+    const botones = document.querySelectorAll('#test-opciones .test-opcion');
+    botones.forEach(b => b.classList.add('bloqueada'));
+
+    if (elegida === p.correcta) {
+        testEstado.aciertos++;
+        btn.classList.add('correcta');
+    } else {
+        btn.classList.add('incorrecta');
+        if (botones[p.correcta]) botones[p.correcta].classList.add('correcta');
+        const exp = document.getElementById('test-explicacion');
+        exp.innerHTML = '<strong>❌ Repasa esto:</strong> ' + escaparHtml(p.explicacion || 'La opción correcta está marcada en verde.');
+        exp.style.display = 'block';
+    }
+
+    const btnSig = document.getElementById('test-btn-siguiente');
+    btnSig.innerText = (testEstado.indice + 1 >= testEstado.preguntas.length) ? 'Ver resultado →' : 'Siguiente →';
+    btnSig.style.display = 'inline-block';
+}
+
+function testSiguiente() {
+    if (testEstado.indice + 1 >= testEstado.preguntas.length) {
+        testFinalizar();
+        return;
+    }
+    testEstado.indice++;
+    testRenderPregunta();
+}
+
+function testFinalizar() {
+    const total = testEstado.preguntas.length;
+    const aciertos = testEstado.aciertos;
+    const pct = Math.round((aciertos / total) * 100);
+
+    document.getElementById('test-fin-nota').innerText = aciertos + ' / ' + total;
+    let mensaje;
+    if (pct >= 80) mensaje = '¡Dominas la teoría! Sigue así.';
+    else if (pct >= 50) mensaje = 'Vas bien, pero repasa los fallos.';
+    else mensaje = 'Toca repasar la teoría con calma. ¡Ánimo!';
+    document.getElementById('test-fin-mensaje').innerText = mensaje + ' (' + pct + '% de aciertos)';
+
+    const aprobado = pct >= 50;
+    const mascota = document.getElementById('test-fin-mascota');
+    mascota.src = aprobado ? 'mascota-feliz.png' : 'mascota-enfadado.png';
+    mascota.classList.remove('animar-feliz', 'animar-enfadado');
+    void mascota.offsetWidth;
+    mascota.classList.add(aprobado ? 'animar-feliz' : 'animar-enfadado');
+
+    document.getElementById('pantalla-test').classList.remove('activo');
+    document.getElementById('pantalla-test-fin').classList.add('activo');
+}
+
+function testSalir() {
+    document.getElementById('pantalla-test').classList.remove('activo');
+}
+
+function testCerrarFin() {
+    document.getElementById('pantalla-test-fin').classList.remove('activo');
 }
 
 /* ---------------------- Utilidades ---------------------- */

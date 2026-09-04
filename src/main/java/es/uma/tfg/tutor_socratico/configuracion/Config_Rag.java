@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 import java.time.Duration;
@@ -30,14 +31,27 @@ public class Config_Rag {
     @Value("${anthropic.max-tokens}")
     private int anthropicMaxTokens;
 
+    @Value("${anthropic.max-tokens-extenso}")
+    private int anthropicMaxTokensExtenso;
+
     @Value("${anthropic.timeout-seconds}")
     private long anthropicTimeoutSeconds;
 
     @Bean
+    @Primary
     public ChatLanguageModel chatLanguageModel() {
         // Si no hay API key (p. ej. desarrollo local), se usa un valor placeholder para que la
         // aplicación ARRANQUE igualmente. Las llamadas reales al modelo fallarán de forma controlada
         // (los servicios capturan el error y devuelven un aviso), pero el resto de la app funciona.
+        return construirModelo(anthropicMaxTokens);
+    }
+
+    @Bean
+    public ChatLanguageModel chatLanguageModelExtenso() {
+        return construirModelo(anthropicMaxTokensExtenso);
+    }
+
+    private ChatLanguageModel construirModelo(int maxTokens) {
         String apiKey = (anthropicApiKey == null || anthropicApiKey.isBlank()) ? "sk-ant-sin-configurar" : anthropicApiKey;
         if (anthropicApiKey == null || anthropicApiKey.isBlank()) {
             log.warn("ANTHROPIC_API_KEY no configurada: el tutor arrancará pero las respuestas del LLM no estarán disponibles :/");
@@ -45,7 +59,7 @@ public class Config_Rag {
         return AnthropicChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(anthropicModel)
-                .maxTokens(anthropicMaxTokens)
+                .maxTokens(maxTokens)
                 .timeout(Duration.ofSeconds(anthropicTimeoutSeconds))
                 .build();
     }
