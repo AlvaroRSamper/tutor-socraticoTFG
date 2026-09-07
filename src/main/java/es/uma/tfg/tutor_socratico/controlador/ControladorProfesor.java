@@ -71,17 +71,14 @@ public class ControladorProfesor {
         this.servicioInformeSemanal = servicioInformeSemanal;
     }
 
-    private String resolverAsignaturaId(HttpSession session, String param) {
-        String asig = (param != null && !param.isBlank()) ? param : (String) session.getAttribute("asignatura_id");
+    private String asignaturaDe(HttpSession session) {
+        String asig = (String) session.getAttribute("asignatura_id");
         return (asig == null || asig.isBlank()) ? "General" : asig;
     }
 
     @GetMapping("/asignatura/info")
     public RespuestaInfoAsignatura obtenerInfoAsignatura(HttpSession session) {
-        String asignaturaId = resolverAsignaturaId(session, null);
-        // Cada asignatura muestra SOLO su propia configuración. Si aún no está configurada,
-        // se devuelven valores vacíos por defecto (no se hereda la de "General"): así se
-        // preserva el aislamiento entre asignaturas (también las que entran por LTI).
+        String asignaturaId = asignaturaDe(session);
         Asignatura asig = asignaturaRepositorio.findById(asignaturaId).orElse(null);
         String titulo = (asig != null && asig.getTitulo() != null) ? asig.getTitulo() : "Tutor Socrático";
         String prompt = (asig != null && asig.getSystemPrompt() != null) ? asig.getSystemPrompt() : "";
@@ -104,10 +101,9 @@ public class ControladorProfesor {
             @RequestParam(value = "emailProfesor", required = false) String emailProfesor,
             @RequestParam(value = "diaInformeSemanal", required = false) Integer diaInformeSemanal,
             @RequestParam(value = "archivos", required = false) MultipartFile[] archivos,
-            @RequestParam(value = "asignaturaId", required = false) String asignaturaIdParam,
             HttpSession session) {
 
-        String asignaturaId = resolverAsignaturaId(session, asignaturaIdParam);
+        String asignaturaId = asignaturaDe(session);
 
         int documentos = servicioIngesta.configurarAsignatura(asignaturaId, titulo, systemPrompt, colorTema,
                 sensibilidad, emailProfesor, diaInformeSemanal, archivos);
@@ -123,27 +119,25 @@ public class ControladorProfesor {
     @PostMapping("/asignatura/borrar-archivo")
     public ResponseEntity<RespuestaExito> borrarArchivo(
             @RequestParam("nombreArchivo") String nombreArchivo,
-            @RequestParam(value = "asignaturaId", required = false) String asignaturaIdParam,
             HttpSession session) {
 
-        String asignaturaId = resolverAsignaturaId(session, asignaturaIdParam);
+        String asignaturaId = asignaturaDe(session);
 
         boolean ok = servicioIngesta.borrarArchivo(asignaturaId, nombreArchivo);
         return ResponseEntity.ok(new RespuestaExito(ok));
     }
 
     @PostMapping("/asignatura/informe-semanal/probar")
-    public RespuestaExito probarInformeSemanal(@RequestParam(required = false) String asignaturaId, HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+    public RespuestaExito probarInformeSemanal(HttpSession session) {
+        String asig = asignaturaDe(session);
         boolean ok = servicioInformeSemanal.enviarInforme(asig, true);
         return new RespuestaExito(ok);
     }
 
     @GetMapping("/asignatura/radar-confusion")
-    public RespuestaRadar radarConfusion(@RequestParam(required = false) String asignaturaId,
-                                         @RequestParam(defaultValue = "2") int semanas,
+    public RespuestaRadar radarConfusion(@RequestParam(defaultValue = "2") int semanas,
                                          HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+        String asig = asignaturaDe(session);
         int sem = Math.max(1, Math.min(6, semanas));
         LocalDateTime desde = LocalDateTime.now().minusWeeks(sem);
         List<RegistroConsulta> ultimas = repositorio.buscarChatDesde(asig, desde, PageRequest.of(0, 200));
@@ -156,17 +150,15 @@ public class ControladorProfesor {
 
     @PostMapping("/estancamiento/sensibilidad")
     public RespuestaSensibilidad guardarSensibilidad(@RequestParam int valor,
-                                                     @RequestParam(required = false) String asignaturaId,
                                                      HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+        String asig = asignaturaDe(session);
         int aux = servicioEstancamiento.guardarSensibilidad(asig, valor);
         return new RespuestaSensibilidad(true, aux);
     }
 
     @GetMapping("/estancamiento/alumnos")
-    public List<Map<String, Object>> alumnosConProblemas(@RequestParam(required = false) String asignaturaId,
-                                                         HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+    public List<Map<String, Object>> alumnosConProblemas(HttpSession session) {
+        String asig = asignaturaDe(session);
         return servicioEstancamiento.listarAlumnosConProblemas(asig);
     }
 
@@ -182,11 +174,10 @@ public class ControladorProfesor {
             @RequestParam(required = false) String tema,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam(required = false) String asignaturaId,
             @RequestParam(defaultValue = "200") int limite,
             HttpSession session) {
 
-        String asig = resolverAsignaturaId(session, asignaturaId);
+        String asig = asignaturaDe(session);
         List<RegistroConsulta> registros = repositorio.buscarConFiltros(asig,
                 normalizar(alumno), normalizar(tema), inicioDe(desde), finDe(hasta),
                 PageRequest.of(0, limite));
@@ -195,8 +186,8 @@ public class ControladorProfesor {
     }
 
     @GetMapping("/resumen")
-    public RespuestaResumen resumen(@RequestParam(required = false) String asignaturaId, HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+    public RespuestaResumen resumen(HttpSession session) {
+        String asig = asignaturaDe(session);
         return new RespuestaResumen(
                 repositorio.countByAsignaturaId(asig),
                 repositorio.contarAlumnosActivos(asig),
@@ -205,8 +196,8 @@ public class ControladorProfesor {
     }
 
     @GetMapping("/perfiles")
-    public List<PerfilDocente> perfiles(@RequestParam(required = false) String asignaturaId, HttpSession session) {
-        String asig = resolverAsignaturaId(session, asignaturaId);
+    public List<PerfilDocente> perfiles(HttpSession session) {
+        String asig = asignaturaDe(session);
         return perfilRepositorio.findByAsignaturaId(asig).stream()
                 .map(p -> {
                     int teorico = Math.max(1, p.getContadorTeorico());
@@ -236,10 +227,9 @@ public class ControladorProfesor {
             @RequestParam(required = false) String tema,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam(required = false) String asignaturaId,
             HttpSession session) {
 
-        String asig = resolverAsignaturaId(session, asignaturaId);
+        String asig = asignaturaDe(session);
         String alumnoFiltro = normalizar(alumno);
         String temaFiltro = normalizar(tema);
         LocalDateTime desdeFiltro = inicioDe(desde);
@@ -288,8 +278,13 @@ public class ControladorProfesor {
 
     static String escaparCsv(String valor) {
         if (valor == null) {return "";}
-        if (valor.contains("\"") || valor.contains(",") || valor.contains("\n") || valor.contains("\r")) {return "\"" + valor.replace("\"", "\"\"") + "\"";}
-        return valor;
+        String v = valor;
+        char primero = v.isEmpty() ? '\0' : v.charAt(0);
+        if (primero == '=' || primero == '+' || primero == '-' || primero == '@' || primero == '\t' || primero == '\r') {
+            v = "'" + v;
+        }
+        if (v.contains("\"") || v.contains(",") || v.contains("\n") || v.contains("\r")) {return "\"" + v.replace("\"", "\"\"") + "\"";}
+        return v;
     }
 
     private String normalizar(String valor) {
