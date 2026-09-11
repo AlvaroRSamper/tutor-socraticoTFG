@@ -1,17 +1,16 @@
 # Tutor Socrático de POO
 
-Este es el proyecto de mi TFG: un tutor basado en LLMs (RAG) para ayudar a estudiar
-Programación Orientada a Objetos. En vez de dar la solución directamente, va guiando
+Este es el proyecto de mi TFG: un tutor basado en LLMs (RAG) para ayudar a estudiantes de programación. En vez de dar la solución directamente, va guiando
 al alumno con preguntas. Por detrás es una aplicación Spring Boot con un frontend
 estático, y se puede integrar en Moodle vía LTI.
 
 ## Qué necesitas tener instalado
 
-- **Java 17** (es la versión con la que está hecho, no uses una más nueva por si acaso)
+- **Java 17**
 - No hace falta instalar Maven: el proyecto trae el wrapper (`mvnw` / `mvnw.cmd`)
 - Para producción: **PostgreSQL** con la extensión **pgvector**
 
-## Arrancar en local (lo más rápido para probarlo)
+## Arrancar en local
 
 Para desarrollo hay un perfil `dev` que arranca sin complicaciones: **no necesita
 Docker, ni PostgreSQL, ni clave de la API**. Usa una base de datos H2 en fichero
@@ -35,7 +34,7 @@ Cuando arranque, la app está en **http://localhost:8080**.
 
 ### Usuarios de prueba
 
-En local ya vienen unas cuentas creadas (la contraseña es la misma que el ID):
+En local ya vienen unas cuentas creadas:
 
 | Usuario | Contraseña | Rol      |
 |---------|-----------|----------|
@@ -49,8 +48,7 @@ En local ya vienen unas cuentas creadas (la contraseña es la misma que el ID):
 
 ### La clave de la API (opcional en local)
 
-La app arranca sin la clave de Anthropic, pero las respuestas del tutor no funcionarán
-(sale un aviso). Si quieres probar el chat de verdad, define la variable de entorno
+La app arranca sin la clave de Anthropic, pero las respuestas del tutor no funcionarán. Si quieres probar el chat de verdad, define la variable de entorno
 antes de arrancar:
 
 ```powershell
