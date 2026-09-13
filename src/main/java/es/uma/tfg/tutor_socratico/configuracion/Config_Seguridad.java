@@ -6,13 +6,12 @@ import es.uma.tfg.tutor_socratico.configuracion.seguridad.ManejadorEntryPointNoA
 import es.uma.tfg.tutor_socratico.configuracion.seguridad.ManejadorLoginExitoso;
 import es.uma.tfg.tutor_socratico.configuracion.seguridad.ManejadorLoginFallido;
 import es.uma.tfg.tutor_socratico.configuracion.seguridad.ManejadorLogoutExitoso;
+import es.uma.tfg.tutor_socratico.configuracion.seguridad.RegistroUsuarios;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,8 +26,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
-import java.util.List;
-
 
 @Configuration
 @EnableWebSecurity
@@ -41,24 +38,8 @@ public class Config_Seguridad {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PropiedadesUsuarios propiedadesUsuarios) {
-        List<UserDetails> usuarios = propiedadesUsuarios.usuarios().stream()
-                .map(usuario -> {
-                    String hash = usuario.passwordHash();
-                    if (hash != null && !hash.startsWith("{")) {
-                        if (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$")) {
-                            hash = "{bcrypt}" + hash;
-                        } else {
-                            hash = "{noop}" + hash;
-                        }
-                    }
-                    return User.withUsername(usuario.id())
-                            .password(hash)
-                            .roles(usuario.rol())
-                            .build();
-                })
-                .toList();
-        return new InMemoryUserDetailsManager(usuarios);
+    public UserDetailsService userDetailsService(RegistroUsuarios registroUsuarios) {
+        return new InMemoryUserDetailsManager(registroUsuarios.usuarios());
     }
 
 

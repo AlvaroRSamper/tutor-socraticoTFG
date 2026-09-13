@@ -15,22 +15,12 @@ import java.util.Map;
 @Component
 public class ManejadorLoginExitoso implements AuthenticationSuccessHandler {
 
-    /** Asignatura por defecto para el login manual (por LTI la sobrescribe la del curso). */
-    private static final String ASIGNATURA_POR_DEFECTO = "General";
-
-    /**
-     * Cuentas de prueba aisladas en su propia asignatura, para que el profesor pruebe la app
-     * en un entorno limpio sin mezclar sus datos con el resto de cuentas de demostración.
-     */
-    private static final Map<String, String> ASIGNATURA_POR_USUARIO = Map.of(
-            "10001", "PRUEBAS",
-            "90001", "PRUEBAS"
-    );
-
     private final ObjectMapper objectMapper;
+    private final RegistroUsuarios registroUsuarios;
 
-    public ManejadorLoginExitoso(ObjectMapper objectMapper) {
+    public ManejadorLoginExitoso(ObjectMapper objectMapper, RegistroUsuarios registroUsuarios) {
         this.objectMapper = objectMapper;
+        this.registroUsuarios = registroUsuarios;
     }
 
     @Override
@@ -47,7 +37,7 @@ public class ManejadorLoginExitoso implements AuthenticationSuccessHandler {
                 .findFirst()
                 .orElse("ALUMNO");
 
-        String asignatura = ASIGNATURA_POR_USUARIO.getOrDefault(authentication.getName(), ASIGNATURA_POR_DEFECTO);
+        String asignatura = registroUsuarios.asignaturaDe(authentication.getName());
         request.getSession().setAttribute("asignatura_id", asignatura);
 
         response.setStatus(HttpServletResponse.SC_OK);

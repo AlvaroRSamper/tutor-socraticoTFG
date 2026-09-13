@@ -107,6 +107,31 @@ TUTOR_SECURITY_USUARIOS_0_ROL=PROFESOR
 Para la integración con Moodle (LTI) hay que definir además `LTI_ISSUER`,
 `LTI_CLIENT_ID`, `LTI_JWKS_URI` y `LTI_AUTH_LOGIN_URL` con los datos que da Moodle.
 
+### Alta de cuentas por login manual
+
+Mientras el Campus Virtual no habilite el acceso LTI, el profesorado y el alumnado
+entran con **usuario y contraseña**. En vez de dar de alta cada cuenta a mano por
+variable de entorno, el profesor genera un fichero semilla con todas las cuentas de la
+clase y lo conecta con dos variables:
+
+```bash
+TUTOR_USUARIOS_FICHERO=/ruta/al/usuarios.csv   # cuentas de la clase (id,password,rol,asignatura)
+TUTOR_ASIGNATURA_POR_DEFECTO=PROG1             # asignatura para las cuentas que no la indiquen
+```
+
+Las contraseñas pueden ir en texto plano (la app las cifra con bcrypt al arrancar) o ya
+cifradas. El fichero se genera con los scripts de `scripts/` (`generar-usuarios.ps1` /
+`generar-usuarios.sh`); el proceso completo está en [`scripts/README.md`](scripts/README.md).
+El acceso LTI queda configurado en el código para cuando el Campus lo habilite.
+
+Las cuentas se cargan **al arrancar**: si añades o cambias cuentas del fichero, hay que
+**reiniciar la aplicación** para que surta efecto (no es en caliente).
+
+Si tienes **varias asignaturas** en el mismo despliegue, genera un fichero por asignatura
+(con rangos de ID distintos) y apunta `TUTOR_USUARIOS_FICHERO` a todos ellos separados por
+coma: `TUTOR_USUARIOS_FICHERO=/ruta/eda.csv,/ruta/poo.csv`. Cada cuenta lleva su asignatura
+en el CSV, así que una sola instancia sirve a todas.
+
 ### 3. Generar y arrancar el .jar
 
 ```bash
@@ -126,10 +151,11 @@ las cabeceras `X-Forwarded-*` del proxy.
 - Documentación de la API (Swagger): http://localhost:8080/swagger-ui.html
 - En local puedes mirar la base de datos H2 en http://localhost:8080/h2-console
   (URL JDBC: `jdbc:h2:file:./data/tutor`, usuario `sa`, sin contraseña)
-- En producción **todo el mundo entra por Moodle** (LTI): el rol se asigna automáticamente
-  según el rol que tenga la persona en el Campus Virtual (Profesor/a → vista de profesor,
-  Estudiante → vista de alumno). El login manual con ID y contraseña es sobre todo para
-  las pruebas en local y como acceso de respaldo del profesorado.
+- **Acceso en producción:** mientras el Campus Virtual no habilite el acceso LTI, el
+  profesorado y el alumnado entran con **ID y contraseña** (cuentas provisionadas por el
+  fichero semilla, ver arriba). La integración LTI está lista en el código: en cuanto
+  Moodle la habilite, al entrar por el enlace de la asignatura el rol se asigna solo
+  (Profesor/a → vista de profesor, Estudiante → vista de alumno) sin tocar código.
 
 ## Sobre el proyecto
 

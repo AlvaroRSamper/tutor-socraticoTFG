@@ -155,7 +155,7 @@
             <div class="login-box">
                 <img src="logo-uma.png" alt="Logo UMA" class="login-logo">
                 <h2>Tutor Socrático</h2>
-                <p class="login-subtitulo">Acceso manual (Docentes y Pruebas)</p>
+                <p class="login-subtitulo">Introduce el usuario y la contraseña que te ha facilitado tu profesor/a.</p>
                 <form id="form-login" onsubmit="event.preventDefault(); hacerLogin();">
                     <div class="form-group">
                         <label>Identificador:</label>
@@ -163,7 +163,7 @@
                     </div>
                     <div class="form-group">
                         <label>Contraseña:</label>
-                        <input type="password" id="login-pass" maxlength="5" inputmode="numeric" autocomplete="current-password" required>
+                        <input type="password" id="login-pass" maxlength="64" autocomplete="current-password" required>
                     </div>
                     <p id="login-error" class="login-error" style="display:none;"></p>
                     <button type="submit" class="btn-confirm login-submit">Entrar</button>
