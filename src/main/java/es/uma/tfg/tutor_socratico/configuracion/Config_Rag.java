@@ -3,6 +3,7 @@ package es.uma.tfg.tutor_socratico.configuracion;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2q.AllMiniLmL6V2QuantizedEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -22,11 +23,20 @@ import java.time.Duration;
 @Configuration
 public class Config_Rag {
 
+    @Value("${tutor.llm.provider:anthropic}")
+    private String proveedor;
+
     @Value("${anthropic.api.key}")
     private String anthropicApiKey;
 
     @Value("${anthropic.model}")
     private String anthropicModel;
+
+    @Value("${openai.api.key:}")
+    private String openaiApiKey;
+
+    @Value("${openai.model:gpt-4o}")
+    private String openaiModel;
 
     @Value("${anthropic.max-tokens}")
     private int anthropicMaxTokens;
@@ -52,6 +62,13 @@ public class Config_Rag {
     }
 
     private ChatLanguageModel construirModelo(int maxTokens) {
+        if ("openai".equalsIgnoreCase(proveedor)) {
+            return construirOpenAi(maxTokens);
+        }
+        return construirAnthropic(maxTokens);
+    }
+
+    private ChatLanguageModel construirAnthropic(int maxTokens) {
         String apiKey = (anthropicApiKey == null || anthropicApiKey.isBlank()) ? "sk-ant-sin-configurar" : anthropicApiKey;
         if (anthropicApiKey == null || anthropicApiKey.isBlank()) {
             log.warn("ANTHROPIC_API_KEY no configurada: el tutor arrancará pero las respuestas del LLM no estarán disponibles :/");
@@ -59,6 +76,19 @@ public class Config_Rag {
         return AnthropicChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(anthropicModel)
+                .maxTokens(maxTokens)
+                .timeout(Duration.ofSeconds(anthropicTimeoutSeconds))
+                .build();
+    }
+
+    private ChatLanguageModel construirOpenAi(int maxTokens) {
+        String apiKey = (openaiApiKey == null || openaiApiKey.isBlank()) ? "sk-sin-configurar" : openaiApiKey;
+        if (openaiApiKey == null || openaiApiKey.isBlank()) {
+            log.warn("OPENAI_API_KEY no configurada: el tutor arrancará pero las respuestas del LLM no estarán disponibles :/");
+        }
+        return OpenAiChatModel.builder()
+                .apiKey(apiKey)
+                .modelName(openaiModel)
                 .maxTokens(maxTokens)
                 .timeout(Duration.ofSeconds(anthropicTimeoutSeconds))
                 .build();

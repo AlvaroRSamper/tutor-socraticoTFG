@@ -23,6 +23,10 @@ data/
 .env.*
 *.local.properties
 
+# --- Ficheros de cuentas generados (contienen contraseñas) ---
+usuarios.csv
+credenciales.csv
+
 # --- Documentación autogenerada por Spring Initializr ---
 HELP.md
 

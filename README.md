@@ -22,9 +22,10 @@ En Windows (PowerShell):
 .\mvnw.cmd spring-boot:run
 ```
 
-En Linux/Mac:
+En Linux/Mac (la primera vez, da permisos de ejecución al wrapper y a los scripts):
 
 ```bash
+chmod +x ./mvnw scripts/*.sh
 ./mvnw spring-boot:run
 ```
 
@@ -91,8 +92,11 @@ DB_NAME=...
 DB_USER=...
 DB_PASSWORD=...
 
-# Modelo de IA
+# Modelo de IA: elige proveedor (anthropic por defecto, u openai) y rellena su clave
+LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_MODEL / OPENAI_MODEL para cambiar el modelo (opcional; hay valores por defecto)
+# Si LLM_PROVIDER=openai:  OPENAI_API_KEY=sk-...
 
 # Correo (para los avisos y el informe semanal del profesor)
 MAIL_USERNAME=tu_correo@gmail.com
