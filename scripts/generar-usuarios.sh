@@ -27,7 +27,7 @@ if [[ -z "$ASIGNATURA" ]]; then
 fi
 
 nueva_password() {
-    LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789' < /dev/urandom | head -c "$LONGITUD"
+    LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789' < /dev/urandom 2>/dev/null | head -c "$LONGITUD" || true
 }
 
 alumnos=()
