@@ -109,7 +109,7 @@ La extensión tiene que crearla el usuario postgres. La primera migración inten
 #### 3. Descargar y compilar
 ```bash
 sudo useradd --system --create-home --home-dir /opt/tutor-socratico tutor
-sudo -u tutor git clone <url-del-repositorio> /opt/tutor-socratico/app
+sudo -u tutor git clone https://github.com/AlvaroRSamper/tutor-socraticoTFG /opt/tutor-socratico/app
 cd /opt/tutor-socratico/app
 sudo -u tutor chmod +x mvnw scripts/*.sh
 sudo -u tutor ./mvnw clean package
