@@ -859,6 +859,18 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
 .reto-carpeta-estado { font-size: 0.8rem; color: var(--text-muted); }
 .reto-carpeta-estado.vinculada { color: var(--success); font-weight: 500; }
 .reto-subform { margin-top: 18px; }
+.retomar-aviso {
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: var(--info-bg);
+    border: 1px solid var(--border-color);
+    border-left: 2px solid var(--info);
+    border-radius: var(--radius-sm);
+}
+.retomar-aviso p { margin: 6px 0 0; font-size: 0.9rem; }
+.retomar-titulo { font-weight: 600; }
+.radar-chip.en-curso { background: var(--info-bg); color: var(--info); border-color: var(--info); }
+.radar-chip.hecho { background: var(--success-bg); color: var(--success); border-color: var(--success); }
 .lista-propuestos { max-height: 300px; overflow-y: auto; }
 
 #pantalla-reto {

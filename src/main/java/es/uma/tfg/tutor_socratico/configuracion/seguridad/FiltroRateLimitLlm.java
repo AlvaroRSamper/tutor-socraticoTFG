@@ -37,6 +37,7 @@ public class FiltroRateLimitLlm extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String ruta = rutaRelativa(request);
+        if (ruta.equals("/api/reto/tiempo")) return true;
         return !(ruta.startsWith("/api/tutor/") || ruta.startsWith("/api/reto/"));
     }
 

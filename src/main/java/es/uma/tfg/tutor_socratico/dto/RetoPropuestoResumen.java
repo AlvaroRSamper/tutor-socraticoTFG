@@ -6,5 +6,7 @@ public record RetoPropuestoResumen(
     String dificultad,
     String tema,
     int nMicrohitos,
-    boolean completadoPorMi
+    boolean completadoPorMi,
+    String estadoMio,
+    int hitosCompletados
 ) {}

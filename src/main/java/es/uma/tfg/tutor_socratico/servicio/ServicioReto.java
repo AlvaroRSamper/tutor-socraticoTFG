@@ -51,7 +51,6 @@ import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metad
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,6 +66,7 @@ import java.util.Optional;
 public class ServicioReto {
     private static final int MAX_CHARS_CODIGO = 30_000;
     private static final int MAX_CHARS_CODIGO_TUTOR = 40_000;
+    private static final int MAX_SEGUNDOS_POR_LATIDO = 300;
 
     private static final int[] AUTONOMIA_BASE = { 100, 70, 45, 20 };
 
@@ -178,17 +178,20 @@ public class ServicioReto {
         List<Ejercicio> propuestos = ejercicioRepositorio.findByAsignaturaIdAndPublicadoTrueOrderByFechaCreacionDesc(asig);
         List<RetoPropuestoResumen> salida = new ArrayList<>();
         for (Ejercicio e : propuestos) {
-            boolean completado = resolucionRepositorio
-                    .findFirstByUsernameAndEjercicioIdOrderByFechaInicioDesc(username, e.getId())
-                    .map(r -> r.getEstado() == RegistroResolucion.Estado.COMPLETADO)
-                    .orElse(false);
+            RegistroResolucion ultima = resolucionRepositorio
+                    .findFirstByUsernameAndEjercicioIdOrderByFechaInicioDescIdDesc(username, e.getId())
+                    .orElse(null);
+            boolean completado = resolucionRepositorio.existsByUsernameAndEjercicioIdAndEstado(
+                    username, e.getId(), RegistroResolucion.Estado.COMPLETADO);
             salida.add(new RetoPropuestoResumen(
                     e.getId(),
                     e.getTitulo(),
                     e.getDificultad(),
                     e.getTema(),
                     e.getMicrohitos().size(),
-                    completado
+                    completado,
+                    ultima != null ? ultima.getEstado().name() : null,
+                    ultima != null ? hitosCompletados(ultima) : 0
             ));
         }
         return salida;
@@ -341,10 +344,23 @@ public class ServicioReto {
 
 
     @Transactional
-    public RespuestaEstadoReto iniciarResolucion(Long ejercicioId, String username, String asignaturaId) {
+    public RespuestaEstadoReto iniciarResolucion(Long ejercicioId, String username, String asignaturaId, boolean reiniciar) {
         Ejercicio ejercicio = ejercicioRepositorio.findById(ejercicioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Ejercicio no encontrado: " + ejercicioId));
         String asig = normalizarAsignatura(asignaturaId);
+
+        RegistroResolucion enCurso = resolucionRepositorio
+                .findFirstByUsernameAndEjercicioIdOrderByFechaInicioDescIdDesc(username, ejercicioId)
+                .filter(r -> r.getEstado() == RegistroResolucion.Estado.EN_PROGRESO)
+                .orElse(null);
+        if (enCurso != null) {
+            if (!reiniciar) {
+                return estadoDe(enCurso, ejercicio, true);
+            }
+            enCurso.setEstado(RegistroResolucion.Estado.ABANDONADO);
+            enCurso.setFechaFin(LocalDateTime.now());
+            resolucionRepositorio.save(enCurso);
+        }
 
         RegistroResolucion resolucion = RegistroResolucion.builder()
                 .username(username)
@@ -353,6 +369,7 @@ public class ServicioReto {
                 .estado(RegistroResolucion.Estado.EN_PROGRESO)
                 .porcentajeIndependencia(100)
                 .fechaInicio(LocalDateTime.now())
+                .tiempoTotalSegundos(0)
                 .build();
 
         for (Microhito h : ejercicio.getMicrohitos()) {
@@ -366,19 +383,43 @@ public class ServicioReto {
         }
         resolucionRepositorio.save(resolucion);
 
+        return estadoDe(resolucion, ejercicio, false);
+    }
+
+    @Transactional
+    public void sumarTiempo(Long resolucionId, int segundos, String username) {
+        RegistroResolucion resolucion = cargarResolucionPropia(resolucionId, username);
+        if (resolucion.getEstado() != RegistroResolucion.Estado.EN_PROGRESO) return;
+        int incremento = Math.max(0, Math.min(MAX_SEGUNDOS_POR_LATIDO, segundos));
+        int actual = resolucion.getTiempoTotalSegundos() != null ? resolucion.getTiempoTotalSegundos() : 0;
+        resolucion.setTiempoTotalSegundos(actual + incremento);
+        resolucionRepositorio.save(resolucion);
+    }
+
+    private RespuestaEstadoReto estadoDe(RegistroResolucion resolucion, Ejercicio ejercicio, boolean retomado) {
+        Integer independencia = resolucion.getPorcentajeIndependencia() != null ? resolucion.getPorcentajeIndependencia() : 100;
+        Integer autoria = resolucion.getPorcentajeAutoria() != null ? resolucion.getPorcentajeAutoria() : 100;
         return new RespuestaEstadoReto(
                 resolucion.getId(),
                 ejercicio.getId(),
                 ejercicio.getTitulo(),
                 ejercicio.getEnunciado(),
                 ejercicio.getLenguaje(),
-                100,
-                100,
-                100,
-                false,
+                independencia,
+                independencia,
+                autoria,
+                resolucion.getEstado() == RegistroResolucion.Estado.COMPLETADO,
                 "",
-                estadosADTO(resolucion)
+                estadosADTO(resolucion),
+                resolucion.getTiempoTotalSegundos() != null ? resolucion.getTiempoTotalSegundos() : 0,
+                retomado
         );
+    }
+
+    private int hitosCompletados(RegistroResolucion resolucion) {
+        return (int) resolucion.getEstadosHitos().stream()
+                .filter(h -> h.getEstado() == EstadoMicrohito.Estado.COMPLETADO)
+                .count();
     }
 
     @Transactional
@@ -570,10 +611,6 @@ public class ServicioReto {
         if (todosCompletados && resolucion.getEstado() != RegistroResolucion.Estado.COMPLETADO) {
             resolucion.setEstado(RegistroResolucion.Estado.COMPLETADO);
             resolucion.setFechaFin(LocalDateTime.now());
-            if (resolucion.getFechaInicio() != null) {
-                resolucion.setTiempoTotalSegundos(
-                        (int) Duration.between(resolucion.getFechaInicio(), resolucion.getFechaFin()).getSeconds());
-            }
         }
         resolucionRepositorio.save(resolucion);
 
@@ -588,8 +625,27 @@ public class ServicioReto {
                 resolucion.getPorcentajeAutoria(),
                 todosCompletados,
                 comentarioDocente,
-                estadosADTO(resolucion)
+                estadosADTO(resolucion),
+                resolucion.getTiempoTotalSegundos() != null ? resolucion.getTiempoTotalSegundos() : 0,
+                false
         );
+    }
+
+    private boolean esMejorIntento(RegistroResolucion candidato, RegistroResolucion actual) {
+        int rangoCandidato = rangoEstado(candidato.getEstado());
+        int rangoActual = rangoEstado(actual.getEstado());
+        if (rangoCandidato != rangoActual) return rangoCandidato > rangoActual;
+        int indepCandidato = candidato.getPorcentajeIndependencia() != null ? candidato.getPorcentajeIndependencia() : 0;
+        int indepActual = actual.getPorcentajeIndependencia() != null ? actual.getPorcentajeIndependencia() : 0;
+        return indepCandidato > indepActual;
+    }
+
+    private int rangoEstado(RegistroResolucion.Estado estado) {
+        return switch (estado) {
+            case COMPLETADO -> 2;
+            case EN_PROGRESO -> 1;
+            case ABANDONADO -> 0;
+        };
     }
 
     private int autonomiaHito(EstadoMicrohito eh) {
@@ -640,24 +696,9 @@ public class ServicioReto {
                     .filter(r -> e.getId().equals(r.getEjercicioId()))
                     .toList();
 
-            // Filtrar solo el mejor intento por alumno
             java.util.Map<String, RegistroResolucion> mejores = new java.util.HashMap<>();
             for (RegistroResolucion r : deEste) {
-                String usr = r.getUsername();
-                if (!mejores.containsKey(usr)) {
-                    mejores.put(usr, r);
-                } else {
-                    RegistroResolucion ex = mejores.get(usr);
-                    boolean rComp = r.getEstado() == RegistroResolucion.Estado.COMPLETADO;
-                    boolean exComp = ex.getEstado() == RegistroResolucion.Estado.COMPLETADO;
-                    if (rComp && !exComp) {
-                        mejores.put(usr, r);
-                    } else if (rComp == exComp) {
-                        int rIndep = r.getPorcentajeIndependencia() != null ? r.getPorcentajeIndependencia() : 0;
-                        int exIndep = ex.getPorcentajeIndependencia() != null ? ex.getPorcentajeIndependencia() : 0;
-                        if (rIndep > exIndep) mejores.put(usr, r);
-                    }
-                }
+                mejores.merge(r.getUsername(), r, (ex, nuevo) -> esMejorIntento(nuevo, ex) ? nuevo : ex);
             }
 
             List<AlumnoRadarDTO> alumnos = new ArrayList<>();

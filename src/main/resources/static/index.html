@@ -291,6 +291,19 @@
                 </div>
             </div>
 
+            <div id="reto-form-retomar" class="reto-subform" style="display:none;">
+                <div class="retomar-aviso">
+                    <div class="retomar-titulo">⏳ Este reto ya lo empezaste</div>
+                    <p id="reto-retomar-texto"></p>
+                    <p class="texto-muted texto-pequeno">Si lo reinicias empezarás desde cero y tu intento anterior quedará como abandonado.</p>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="retoElegirPropuestos()">Atrás</button>
+                    <button class="btn-reiniciar" id="reto-btn-reiniciar">Reiniciar</button>
+                    <button class="btn-confirm" id="reto-btn-continuar">Seguir por donde iba</button>
+                </div>
+            </div>
+
             <div id="reto-form-test" class="reto-subform" style="display:none;">
                 <p class="modal-descripcion">
                     La IA generará un test de teoría a partir de los apuntes oficiales del tema. Nadie mira tus resultados: es solo para que repases.

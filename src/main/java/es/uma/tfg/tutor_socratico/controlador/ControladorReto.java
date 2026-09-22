@@ -13,6 +13,7 @@ import es.uma.tfg.tutor_socratico.dto.MicrohitoDTO;
 import es.uma.tfg.tutor_socratico.dto.PeticionPublicarEjercicio;
 import es.uma.tfg.tutor_socratico.dto.PeticionRecargar;
 import es.uma.tfg.tutor_socratico.dto.PeticionSubirEjercicio;
+import es.uma.tfg.tutor_socratico.dto.PeticionTiempoReto;
 import es.uma.tfg.tutor_socratico.dto.RespuestaChatReto;
 import es.uma.tfg.tutor_socratico.dto.RespuestaEstadoReto;
 import es.uma.tfg.tutor_socratico.dto.RespuestaPublicacion;
@@ -20,6 +21,7 @@ import es.uma.tfg.tutor_socratico.dto.RetoPropuestoResumen;
 import es.uma.tfg.tutor_socratico.servicio.ServicioReto;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -88,7 +90,14 @@ public class ControladorReto {
     @PostMapping("/iniciar")
     public RespuestaEstadoReto iniciar(@Valid @RequestBody PeticionIniciarReto peticion,
                                        Authentication auth, HttpSession session) {
-        return servicioReto.iniciarResolucion(peticion.ejercicioId(), auth.getName(), asignaturaDe(session));
+        return servicioReto.iniciarResolucion(peticion.ejercicioId(), auth.getName(), asignaturaDe(session),
+                Boolean.TRUE.equals(peticion.reiniciar()));
+    }
+
+    @PostMapping("/tiempo")
+    public ResponseEntity<Void> tiempo(@Valid @RequestBody PeticionTiempoReto peticion, Authentication auth) {
+        servicioReto.sumarTiempo(peticion.resolucionId(), peticion.segundos(), auth.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/chat")

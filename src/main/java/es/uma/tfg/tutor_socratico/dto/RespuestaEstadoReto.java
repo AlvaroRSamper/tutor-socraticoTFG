@@ -13,5 +13,7 @@ public record RespuestaEstadoReto(
     Integer porcentajeAutoria,
     boolean completado,
     String comentarioDocente,
-    List<MicrohitoDTO> microhitos
+    List<MicrohitoDTO> microhitos,
+    Integer tiempoSegundos,
+    boolean retomado
 ) {}

@@ -20,6 +20,8 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -64,8 +66,8 @@ class ControladorRetoTest {
 
     @Test
     void iniciarConEjercicioIdDevuelve200() throws Exception {
-        when(servicioReto.iniciarResolucion(anyLong(), anyString(), anyString()))
-                .thenReturn(new RespuestaEstadoReto(10L, 5L, "T", "E", "Java", 100, 100, 100, false, "", List.of()));
+        when(servicioReto.iniciarResolucion(anyLong(), anyString(), anyString(), eq(false)))
+                .thenReturn(new RespuestaEstadoReto(10L, 5L, "T", "E", "Java", 100, 100, 100, false, "", List.of(), 0, false));
 
         mockMvc.perform(post("/api/reto/iniciar")
                         .with(user("12345").roles("ALUMNO"))
@@ -73,7 +75,46 @@ class ControladorRetoTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ejercicioId\":5}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resolucionId").value(10));
+                .andExpect(jsonPath("$.resolucionId").value(10))
+                .andExpect(jsonPath("$.retomado").value(false));
+    }
+
+    @Test
+    void iniciarConReiniciarPasaLaOpcionAlServicio() throws Exception {
+        when(servicioReto.iniciarResolucion(eq(5L), eq("12345"), anyString(), eq(true)))
+                .thenReturn(new RespuestaEstadoReto(11L, 5L, "T", "E", "Java", 100, 100, 100, false, "", List.of(), 0, false));
+
+        mockMvc.perform(post("/api/reto/iniciar")
+                        .with(user("12345").roles("ALUMNO"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ejercicioId\":5,\"reiniciar\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resolucionId").value(11));
+
+        verify(servicioReto).iniciarResolucion(eq(5L), eq("12345"), anyString(), eq(true));
+    }
+
+    @Test
+    void tiempoValidoDevuelve204() throws Exception {
+        mockMvc.perform(post("/api/reto/tiempo")
+                        .with(user("12345").roles("ALUMNO"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"resolucionId\":10,\"segundos\":60}"))
+                .andExpect(status().isNoContent());
+
+        verify(servicioReto).sumarTiempo(10L, 60, "12345");
+    }
+
+    @Test
+    void tiempoNegativoDevuelve400() throws Exception {
+        mockMvc.perform(post("/api/reto/tiempo")
+                        .with(user("12345").roles("ALUMNO"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"resolucionId\":10,\"segundos\":-5}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

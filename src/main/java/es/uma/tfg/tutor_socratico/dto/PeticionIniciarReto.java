@@ -4,5 +4,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record PeticionIniciarReto(
         @NotNull(message = "El ejercicio es obligatorio")
-        Long ejercicioId
+        Long ejercicioId,
+        Boolean reiniciar
 ) {}

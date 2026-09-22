@@ -14,9 +14,13 @@ const retoEstado = {
     hitos: [],
     dirHandle: null,          // File System Access API
     archivosFallback: null,   // fallback webkitdirectory (FileList)
-    tiempoInicio: null,
+    tiempoBase: 0,
+    segundosSesion: 0,
+    segundosPendientes: 0,
     cronometro: null
 };
+
+const SEGUNDOS_ENTRE_LATIDOS = 60;
 
 const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * 78; // r=78 en el SVG
 
@@ -43,7 +47,7 @@ function retoMostrarCarpeta(mostrar) {
 }
 
 function retoVolverOpciones() {
-    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-test', 'reto-cargando']
+    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-retomar', 'reto-form-test', 'reto-cargando']
         .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     document.querySelector('#modal-reto .reto-opciones').style.display = 'grid';
     retoMostrarCarpeta(false);
@@ -51,7 +55,7 @@ function retoVolverOpciones() {
 
 function retoMostrarSeccion(id) {
     document.querySelector('#modal-reto .reto-opciones').style.display = 'none';
-    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-test']
+    ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-retomar', 'reto-form-test']
         .forEach(s => { const el = document.getElementById(s); if (el) el.style.display = (s === id ? 'block' : 'none'); });
     retoMostrarCarpeta(id !== 'reto-form-test');
 }
@@ -273,14 +277,19 @@ async function retoCargarPropuestos() {
         }
         cont.innerHTML = '';
         lista.forEach(e => {
+            const enCurso = e.estadoMio === 'EN_PROGRESO';
             const div = document.createElement('div');
             div.className = 'radar-ejercicio';
             div.classList.add('clicable');
-            div.onclick = () => retoIniciarDesdeEjercicio(e.ejercicioId, true);
+            div.onclick = () => enCurso ? retoPreguntarRetomar(e) : retoIniciarDesdeEjercicio(e.ejercicioId, true, false);
+            let chips = '';
+            if (e.completadoPorMi) chips += `<span class="radar-chip hecho">✅ Completado</span>`;
+            if (enCurso) chips += `<span class="radar-chip en-curso">⏳ En curso · ${e.hitosCompletados}/${e.nMicrohitos} hitos</span>`;
+            if (!chips) chips = `<span class="radar-chip">${e.nMicrohitos} hitos</span>`;
             div.innerHTML = `
                 <div class="cab">
-                    <span class="titulo">${e.completadoPorMi ? '✅ ' : ''}${escaparHtml(e.titulo)}</span>
-                    <span class="radar-chip">${e.nMicrohitos} hitos</span>
+                    <span class="titulo">${escaparHtml(e.titulo)}</span>
+                    <span class="radar-chips">${chips}</span>
                 </div>
                 <div class="texto-muted texto-pequeno">
                     ${e.dificultad ? 'Dificultad: ' + escaparHtml(e.dificultad) : ''} ${e.tema ? '· ' + escaparHtml(e.tema) : ''}
@@ -292,13 +301,21 @@ async function retoCargarPropuestos() {
     }
 }
 
-async function retoIniciarDesdeEjercicio(ejercicioId, esPropuesto) {
-    retoMostrarCargando('Arrancando el reto…');
+function retoPreguntarRetomar(propuesto) {
+    retoMostrarSeccion('reto-form-retomar');
+    document.getElementById('reto-retomar-texto').innerHTML =
+        `<strong>${escaparHtml(propuesto.titulo)}</strong>: llevas ${propuesto.hitosCompletados} de ${propuesto.nMicrohitos} microhitos completados. ¿Quieres seguir por donde ibas o reiniciarlo?`;
+    document.getElementById('reto-btn-continuar').onclick = () => retoIniciarDesdeEjercicio(propuesto.ejercicioId, true, false);
+    document.getElementById('reto-btn-reiniciar').onclick = () => retoIniciarDesdeEjercicio(propuesto.ejercicioId, true, true);
+}
+
+async function retoIniciarDesdeEjercicio(ejercicioId, esPropuesto, reiniciar) {
+    retoMostrarCargando(reiniciar ? 'Reiniciando el reto…' : 'Arrancando el reto…');
     try {
         const res = await fetch('/api/reto/iniciar', {
             method: 'POST',
             headers: cabecerasConCsrf({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ ejercicioId })
+            body: JSON.stringify({ ejercicioId, reiniciar: !!reiniciar })
         });
         const data = await res.json();
         if (!res.ok) return retoErrorModal(data.mensaje);
@@ -322,22 +339,68 @@ function arrancarReto(data) {
     retoEstado.lenguaje = data.lenguaje || 'java';
     retoEstado.esPropuesto = !!data.esPropuesto;
     retoEstado.hitos = data.microhitos || [];
-    retoEstado.historial = [];
+    retoEstado.historial = data.retomado ? retoCargarChat() : [];
+    if (!data.retomado) retoBorrarChatsDelEjercicio();
 
     cerrarModalReto();
     document.getElementById('reto-titulo-activo').innerText = retoEstado.titulo;
     document.getElementById('pantalla-reto').classList.add('activo');
+    document.getElementById('reto-comentario-eval').style.display = 'none';
 
-    // Mensaje de bienvenida con el enunciado.
     const mensajes = document.getElementById('reto-mensajes');
     mensajes.innerHTML = '';
-    retoAgregarBurbuja('### 📝 Enunciado\n\n' + retoEstado.enunciado +
-        '\n\n---\n\n¡Empecemos! Trabaja en el primer microhito. Escribe tu código en la carpeta vinculada y pulsa **Recargar porcentaje** cuando quieras que evalúe tu avance. Pregúntame lo que necesites.', 'bot');
+    if (data.retomado) {
+        const hechos = retoEstado.hitos.filter(h => h.estado === 'COMPLETADO').length;
+        retoAgregarBurbuja('### 📝 Enunciado\n\n' + retoEstado.enunciado +
+            `\n\n---\n\n**Retomas el reto donde lo dejaste:** llevas ${hechos} de ${retoEstado.hitos.length} microhitos completados. Pulsa **Recargar porcentaje** cuando quieras que vuelva a evaluar tu código.`, 'bot');
+        retoEstado.historial.forEach(m => retoAgregarBurbuja(m.content, m.role));
+    } else {
+        retoAgregarBurbuja('### 📝 Enunciado\n\n' + retoEstado.enunciado +
+            '\n\n---\n\n¡Empecemos! Trabaja en el primer microhito. Escribe tu código en la carpeta vinculada y pulsa **Recargar porcentaje** cuando quieras que evalúe tu avance. Pregúntame lo que necesites.', 'bot');
+    }
 
     renderHitos();
-    actualizarMedidor(0);
+    const hayProgreso = data.retomado && retoEstado.hitos.some(h => h.estado !== 'PENDIENTE');
+    if (hayProgreso) {
+        const autonomia = (data.porcentajeAutonomia != null ? data.porcentajeAutonomia : data.porcentajeIndependencia) || 0;
+        actualizarMedidor(autonomia);
+        actualizarDesglose(autonomia);
+        actualizarAutoria(data.porcentajeAutoria);
+    } else {
+        actualizarMedidor(0);
+        actualizarAutoria(null);
+    }
     retoActualizarEstadoCarpeta();
-    iniciarCronometro();
+    iniciarCronometro(data.tiempoSegundos || 0);
+}
+
+function retoPrefijoChat() {
+    const usuario = typeof claveHistorial !== 'undefined' ? claveHistorial : '';
+    return 'reto_chat_' + usuario + '_e' + retoEstado.ejercicioId + '_';
+}
+
+function retoClaveChat() {
+    return retoPrefijoChat() + 'r' + retoEstado.resolucionId;
+}
+
+function retoGuardarChat() {
+    try { localStorage.setItem(retoClaveChat(), JSON.stringify(retoEstado.historial)); } catch (e) { }
+}
+
+function retoCargarChat() {
+    try {
+        const guardado = JSON.parse(localStorage.getItem(retoClaveChat()) || '[]');
+        return Array.isArray(guardado) ? guardado : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function retoBorrarChatsDelEjercicio() {
+    try {
+        const prefijo = retoPrefijoChat();
+        Object.keys(localStorage).filter(k => k.startsWith(prefijo)).forEach(k => localStorage.removeItem(k));
+    } catch (e) { }
 }
 
 function renderHitos() {
@@ -372,15 +435,46 @@ function actualizarMedidor(pct) {
     num.innerText = pct + '%';
 }
 
-function iniciarCronometro() {
-    retoEstado.tiempoInicio = Date.now();
+function iniciarCronometro(segundosPrevios) {
+    retoEstado.tiempoBase = segundosPrevios;
+    retoEstado.segundosSesion = 0;
+    retoEstado.segundosPendientes = 0;
     const el = document.getElementById('reto-cronometro');
+    el.innerText = formatearTiempo(segundosPrevios);
     clearInterval(retoEstado.cronometro);
     retoEstado.cronometro = setInterval(() => {
-        const s = Math.floor((Date.now() - retoEstado.tiempoInicio) / 1000);
-        el.innerText = formatearTiempo(s);
+        if (document.hidden) return;
+        retoEstado.segundosSesion++;
+        retoEstado.segundosPendientes++;
+        el.innerText = formatearTiempo(retoTiempoTotal());
+        if (retoEstado.segundosPendientes >= SEGUNDOS_ENTRE_LATIDOS) retoSincronizarTiempo(false);
     }, 1000);
 }
+
+function retoTiempoTotal() {
+    return retoEstado.tiempoBase + retoEstado.segundosSesion;
+}
+
+async function retoSincronizarTiempo(alSalir) {
+    const segundos = retoEstado.segundosPendientes;
+    if (!retoEstado.resolucionId || segundos <= 0) return;
+    retoEstado.segundosPendientes = 0;
+    try {
+        const res = await fetch('/api/reto/tiempo', {
+            method: 'POST',
+            keepalive: alSalir,
+            headers: cabecerasConCsrf({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ resolucionId: retoEstado.resolucionId, segundos })
+        });
+        if (!res.ok && res.status !== 404) retoEstado.segundosPendientes += segundos;
+    } catch (e) {
+        retoEstado.segundosPendientes += segundos;
+    }
+}
+
+window.addEventListener('pagehide', () => {
+    if (document.getElementById('pantalla-reto').classList.contains('activo')) retoSincronizarTiempo(true);
+});
 
 function formatearTiempo(seg) {
     const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
@@ -390,6 +484,7 @@ function formatearTiempo(seg) {
 
 function salirReto() {
     clearInterval(retoEstado.cronometro);
+    retoSincronizarTiempo(true);
     document.getElementById('pantalla-reto').classList.remove('activo');
 }
 
@@ -404,6 +499,7 @@ async function retoEnviarMensaje() {
     const texto = input.value.trim();
     if (!texto) return;
     retoEstado.historial.push({ role: 'user', content: texto });
+    retoGuardarChat();
     retoAgregarBurbuja(texto, 'user');
     input.value = '';
 
@@ -419,6 +515,7 @@ async function retoEnviarMensaje() {
         const burbuja = document.getElementById(id);
         if (!res.ok) { burbuja.innerHTML = `<span class="texto-error">${data.mensaje || 'Error del servidor.'}</span>`; return; }
         retoEstado.historial.push({ role: 'assistant', content: data.mensaje });
+        retoGuardarChat();
         marked.setOptions({ breaks: true });
         burbuja.innerHTML = marked.parse(data.mensaje || '');
     } catch (e) {
@@ -472,6 +569,7 @@ async function retoRecargarPorcentaje() {
     try {
         const archivos = await retoLeerCodigo();
         if (archivos === null) { alert('No se ha podido leer la carpeta (permiso denegado).'); return; }
+        await retoSincronizarTiempo(false);
 
         const res = await fetch('/api/reto/recargar', {
             method: 'POST',
@@ -531,9 +629,9 @@ function actualizarAutoria(pct) {
 
 function mostrarPantallaExito(pct) {
     clearInterval(retoEstado.cronometro);
-    const seg = Math.floor((Date.now() - retoEstado.tiempoInicio) / 1000);
+    retoBorrarChatsDelEjercicio();
     document.getElementById('exito-indep').innerText = pct + '%';
-    document.getElementById('exito-tiempo').innerText = 'Tiempo total: ' + formatearTiempo(seg);
+    document.getElementById('exito-tiempo').innerText = 'Tiempo total: ' + formatearTiempo(retoTiempoTotal());
     document.getElementById('pantalla-exito').classList.add('activo');
 }
 
