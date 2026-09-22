@@ -14,10 +14,11 @@
     <!-- Ace Editor para el entorno de programación -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body class="theme-github-dark">
+<script src="js/tema.js"></script>
 
 <!-- PANTALLA DE LOGIN -->
 <div id="pantalla-login">
@@ -37,57 +38,43 @@
             <p id="login-error" class="login-error" style="display:none;"></p>
             <button type="submit" class="btn-confirm login-submit">Entrar</button>
         </form>
-        <p style="margin-top: 18px; font-size: 0.75rem; color: #8b949e;">
-            Si accedes desde el Campus Virtual (Moodle), el acceso es automático.
-        </p>
+        <p class="login-nota">Si accedes desde el Campus Virtual (Moodle), el acceso es automático.</p>
     </div>
 </div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
-    <div class="logo-container" style="display:flex; justify-content:flex-start; align-items:center; gap:0;">
-        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; flex-shrink:1;">
-            <img src="logo-uma.png" alt="Logo UMA" class="logo-uma" style="margin:0;">
-            <h2 style="font-size:1.15rem; font-weight:800; line-height:1.2; margin:4px 0 0 0; color:var(--text-main);">Tutor Socrático</h2>
-            <h3 id="titulo-chat" style="font-size:0.95rem; font-weight:500; line-height:1.2; margin:0; color:var(--text-muted); word-break:break-word;">Todo el temario</h3>
+    <div class="logo-container">
+        <div class="logo-textos">
+            <img src="logo-uma.png" alt="Logo UMA" class="logo-uma">
+            <h2>Tutor Socrático</h2>
+            <h3 id="titulo-chat">Todo el temario</h3>
         </div>
-        <div style="position: relative; display: inline-block;">
-            <img id="mascota-cafe" class="mascota-cafe" src="mascota-gif.gif" alt="Mascota" style="display:inline-block; height:95px; margin-left:-25px; margin-right:-20px; margin-top:-15px; margin-bottom:-15px;">
+        <div class="mascota-contenedor">
+            <img id="mascota-cafe" class="mascota-cafe" src="mascota-gif.gif" alt="Mascota">
             <div id="bocadillo-mascota" class="bocadillo-tooltip"></div>
         </div>
     </div>
 
-    <button class="btn-ejercicio" onclick="abrirModalReto()" style="background: var(--primary); color: #06131f; font-weight: 700; box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 45%, transparent);">
-        🚀 Modo Reto / Ejercicio
-    </button>
-    <button class="btn-ejercicio" onclick="generarApuntesRepaso()" style="background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: var(--primary); color: var(--primary);">
-        📥 Apuntes de Repaso IA
-    </button>
-    <button class="btn-ejercicio" onclick="abrirModalValidador()" style="background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: var(--primary); color: var(--primary);">
-        📝 Validador de Apuntes
-    </button>
+    <div class="acciones-sidebar">
+        <button class="accion-sidebar destacada" onclick="abrirModalReto()">🚀 Modo Reto / Ejercicio</button>
+        <button class="accion-sidebar" onclick="generarApuntesRepaso()">📥 Apuntes de repaso IA</button>
+        <button class="accion-sidebar" onclick="abrirModalValidador()">📝 Validador de apuntes</button>
+    </div>
 
-    <div class="section-title" style="margin-top: 15px;">Conocimientos de la Asignatura</div>
+    <div class="section-title">Temario de la asignatura</div>
     <ul class="topic-list" id="lista-temas">
-        <li class="topic-item general-topic active" data-file="General" onclick="seleccionarTema(this)">
-            🌐 Todo el temario
-        </li>
+        <li class="topic-item general-topic active" data-file="General" onclick="seleccionarTema(this)">🌐 Todo el temario</li>
     </ul>
 
-    <div class="section-title" style="margin-top: 18px; display: flex; align-items: center; gap: 6px;">
-        <span>🎒 Mis Conocimientos</span>
-    </div>
+    <div class="section-title">🎒 Mis conocimientos</div>
     <ul class="topic-list" id="lista-mis-conocimientos">
-        <li class="texto-vacio-mini" style="font-size: 0.75rem; color: var(--text-muted); padding: 4px 8px; list-style: none;">
-            Aún no has guardado apuntes propios.
-        </li>
+        <li class="texto-vacio-mini">Aún no has guardado apuntes propios.</li>
     </ul>
 
-    <div style="font-size: 0.7rem; color: #8b949e; text-align: center; margin-bottom: 5px;">
-        Desarrollado por <a href="https://mail.google.com/mail/?view=cm&fs=1&to=alvaro.rodsam@uma.es&su=Opini%C3%B3n%20sobre%20el%20Tutor%20Socr%C3%A1tico" target="_blank" rel="noopener" title="Escríbeme tu opinión" style="color: inherit; text-decoration: underline; text-underline-offset: 2px;">Álvaro R. Samper</a>
-    </div>
-    <div style="font-size: 0.65rem; color: #8b949e; text-align: center; line-height: 1.3; margin-bottom: 15px; padding: 0 10px; opacity: 0.85;">
-        Este es un tutor socrático basado en un modelo de lenguaje. Para ayudarte nunca va a ser mejor que tu profesor. <strong>¡VE A TUTORÍA!</strong>
+    <div class="pie-sidebar">
+        <p>Desarrollado por <a href="https://mail.google.com/mail/?view=cm&fs=1&to=alvaro.rodsam@uma.es&su=Opini%C3%B3n%20sobre%20el%20Tutor%20Socr%C3%A1tico" target="_blank" rel="noopener" title="Escríbeme tu opinión">Álvaro R. Samper</a></p>
+        <p>Este tutor está basado en un modelo de lenguaje y nunca será mejor que tu profesor. <strong>¡Ve a tutoría!</strong></p>
     </div>
 </div>
 
@@ -102,8 +89,12 @@
     <button class="floating-header-btn floating-right" onclick="toggleHeaderMenu(event)" title="Opciones">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
     </button>
-    <div id="header-dropdown" class="dropdown-menu">
+    <div id="header-dropdown" class="dropdown-menu" role="menu">
         <button class="dropdown-item" onclick="reiniciarChat(); toggleHeaderMenu(event)">🔄 Reiniciar chat</button>
+        <div class="dropdown-sep"></div>
+        <div class="dropdown-etiqueta">Tema visual</div>
+        <div data-selector-temas></div>
+        <div class="dropdown-sep"></div>
         <button class="dropdown-item" onclick="cerrarSesion(); toggleHeaderMenu(event)">🚪 Cerrar sesión</button>
     </div>
 
@@ -114,17 +105,14 @@
                 <div id="mensajes">
                     <div class="mensaje-wrapper bot-wrapper">
                         <div class="mensaje bot">
-                            <div style="display: inline-flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--primary) 20%, transparent); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #ffffff; margin-bottom: 14px;">
-                                <span class="status-dot" style="background: var(--primary); box-shadow: 0 0 10px var(--primary);"></span>
-                                IA Pedagógica Conectada
-                            </div>
-                            <h3 style="margin-top: 0; color: #ffffff; font-size: 1.25rem; border-bottom: none; padding-bottom: 0;">¡Bienvenido/a al Tutor Socrático! 💡</h3>
-                            <p style="color: var(--text-main); font-size: 1rem; line-height: 1.6;">Estoy sincronizado con el temario y los apuntes oficiales de tu asignatura. Mi objetivo no es solo darte respuestas directas, sino guiarte paso a paso para que domines cada concepto de forma profunda y activa.</p>
-                            <div style="margin-top: 18px; padding: 14px 18px; background: color-mix(in srgb, var(--primary) 10%, rgba(0,0,0,0.3)); border-radius: 12px; border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--border-color)); display: flex; flex-direction: column; gap: 8px;">
-                                <span style="font-weight: 600; color: var(--primary); font-size: 0.9rem;">🚀 ¿Cómo empezar?</span>
-                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Selecciona un tema en la barra lateral izquierda para enfocar el estudio.</span>
-                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Pulsa en <strong>"+ Generar Ejercicio"</strong> para ponerte a prueba con un reto interactivo.</span>
-                                <span style="font-size: 0.88rem; color: var(--text-muted);">• Pide tus <strong>"Apuntes de Repaso IA"</strong> para obtener un resumen estructurado al instante.</span>
+                            <span class="bienvenida-chip"><span class="status-dot"></span>IA pedagógica conectada</span>
+                            <h3 class="bienvenida-titulo">¡Bienvenido/a al Tutor Socrático! 💡</h3>
+                            <p>Estoy sincronizado con el temario y los apuntes oficiales de tu asignatura. Mi objetivo no es darte respuestas directas, sino guiarte paso a paso para que domines cada concepto de forma profunda y activa.</p>
+                            <div class="bienvenida-pasos">
+                                <span class="cabecera">¿Cómo empezar?</span>
+                                <span>• Selecciona un tema en la barra lateral para enfocar el estudio.</span>
+                                <span>• Pulsa <strong>Modo Reto / Ejercicio</strong> para ponerte a prueba con un reto interactivo.</span>
+                                <span>• Pide tus <strong>Apuntes de repaso IA</strong> para obtener un resumen estructurado al instante.</span>
                             </div>
                         </div>
                     </div>
@@ -134,7 +122,7 @@
                     <textarea id="inputMensaje" rows="1" placeholder="Haz tu pregunta al tutor... (Shift + Enter para nueva línea)" onkeydown="manejarEnter(event)"></textarea>
                     <button class="btn-enviar" onclick="enviarMensaje()">
                         Enviar
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                 </div>
             </div>
@@ -147,17 +135,15 @@
 <div id="modal-overlay">
     <div class="modal-box">
         <h3>Generador Socrático de Ejercicios</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
-            La IA diseñará un enunciado práctico basándose en los apuntes oficiales de la asignatura.
-        </p>
-        
+        <p class="modal-descripcion">La IA diseñará un enunciado práctico basándose en los apuntes oficiales de la asignatura.</p>
+
         <div class="form-group">
             <label>Selecciona el Tema:</label>
             <select id="select-tema-modal">
                 <!-- Se llenará dinámicamente con JS -->
             </select>
         </div>
-        
+
         <div class="form-group">
             <label>Nivel de Dificultad:</label>
             <select id="select-dificultad">
@@ -176,16 +162,16 @@
 
 <!-- MODAL DE COMENTARIO VALORACIÓN NEGATIVA -->
 <div id="modal-val-neg" class="modal-overlay">
-    <div class="modal-content-card" style="max-width: 500px;">
+    <div class="modal-content-card modal-estrecho">
         <div class="modal-header-bar">
             <h2>👎 ¿Cómo podemos mejorar?</h2>
             <button class="btn-cerrar-modal" onclick="cerrarModalValNeg()">&times;</button>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
-            Tu feedback nos ayuda a calibrar al tutor. Indícanos brevemente qué ha fallado o qué echas en falta en esta respuesta:
-        </p>
-        <textarea id="texto-val-neg" rows="3" placeholder="Ej: Me gustaría un ejemplo de código o una explicación más teórica..." style="width: 100%; padding: 12px; background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: inherit; resize: vertical; box-sizing: border-box; margin-bottom: 20px;"></textarea>
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <p class="modal-descripcion">Tu feedback nos ayuda a calibrar al tutor. Indícanos brevemente qué ha fallado o qué echas en falta en esta respuesta:</p>
+        <div class="form-group">
+            <textarea id="texto-val-neg" class="campo" rows="3" placeholder="Ej: Me gustaría un ejemplo de código o una explicación más teórica..."></textarea>
+        </div>
+        <div class="modal-buttons">
             <button class="btn-cancel" onclick="cerrarModalValNeg()">Omitir</button>
             <button class="btn-confirm" onclick="enviarValoracionNegativaComentario()">Enviar Feedback</button>
         </div>
@@ -199,13 +185,13 @@
             <h2>📥 Apuntes de Repaso Socrático</h2>
             <button class="btn-cerrar-modal" onclick="cerrarModalRepaso()">&times;</button>
         </div>
-        <div id="contenido-repaso-carga" style="text-align: center; padding: 40px 0;">
+        <div id="contenido-repaso-carga" class="carga-centrada">
             <div class="radar-spinner"></div>
-            <p style="color: var(--text-muted); font-weight: 500;">La IA está estructurando y sintetizando los conceptos clave abordados en esta sesión...</p>
+            <p>La IA está estructurando y sintetizando los conceptos clave abordados en esta sesión...</p>
         </div>
         <div id="contenido-repaso-listo" style="display: none;">
             <div id="repaso-render" class="apuntes-cuerpo"></div>
-            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
+            <div class="modal-buttons">
                 <button class="btn-cancel" onclick="cerrarModalRepaso()">Cerrar</button>
                 <button class="btn-ejercicio" onclick="descargarRepasoMd()">📄 Descargar Markdown (.md)</button>
                 <button class="btn-confirm" onclick="imprimirRepasoPdf()">🖨 Imprimir / Guardar en PDF</button>
@@ -218,14 +204,12 @@
 
     <!-- MODAL DE CONFIGURACIÓN INICIAL DEL RETO -->
     <div id="modal-reto" class="modal-overlay">
-        <div class="modal-content-card" style="max-width: 640px;">
+        <div class="modal-content-card modal-ancho">
             <div class="modal-header-bar">
                 <h2>🚀 Modo Reto / Ejercicio</h2>
                 <button class="btn-cerrar-modal" onclick="cerrarModalReto()">&times;</button>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 6px;">
-                Elige cómo quieres empezar tu reto. El tutor te guiará por microhitos sin darte la solución.
-            </p>
+            <p class="modal-descripcion">Elige cómo quieres empezar tu reto. El tutor te guiará por microhitos sin darte la solución.</p>
             <div class="reto-opciones">
                 <div class="reto-opcion" onclick="retoElegirSubir()">
                     <span class="icono">📤</span>
@@ -251,14 +235,14 @@
 
             <div class="reto-carpeta">
                 <div>
-                    <div style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">📁 Carpeta de trabajo (IDE)</div>
+                    <div class="reto-carpeta-titulo">📁 Carpeta de trabajo (IDE)</div>
                     <div class="reto-carpeta-estado" id="reto-carpeta-estado">Sin vincular. Necesaria para "Recargar porcentaje".</div>
                 </div>
                 <button class="btn-ejercicio" onclick="retoVincularCarpeta()">Seleccionar carpeta</button>
             </div>
 
             <!-- Sub-formularios (se muestran según la opción elegida) -->
-            <div id="reto-form-crear" style="display:none; margin-top: 18px;">
+            <div id="reto-form-crear" class="reto-subform" style="display:none;">
                 <div class="form-group">
                     <label>Tema:</label>
                     <select id="reto-select-tema"></select>
@@ -277,19 +261,19 @@
                 </div>
             </div>
 
-            <div id="reto-form-subir" style="display:none; margin-top: 18px;">
+            <div id="reto-form-subir" class="reto-subform" style="display:none;">
                 <div class="form-group">
                     <label>Título:</label>
-                    <input type="text" id="reto-subir-titulo" placeholder="Ej: Lista enlazada en C" style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box;">
+                    <input type="text" id="reto-subir-titulo" class="campo" placeholder="Ej: Lista enlazada en C">
                 </div>
                 <div class="form-group">
                     <label>Enunciado:</label>
-                    <textarea id="reto-subir-enunciado" rows="5" placeholder="Pega aquí el enunciado de tu ejercicio..." style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box; resize:vertical;"></textarea>
+                    <textarea id="reto-subir-enunciado" class="campo" rows="5" placeholder="Pega aquí el enunciado de tu ejercicio..."></textarea>
                 </div>
-                <div class="form-group" style="border-top:1px dashed var(--border-color); padding-top:12px;">
+                <div class="form-group separado">
                     <label>…o sube un archivo (PDF, Markdown o TXT):</label>
-                    <input type="file" id="reto-subir-archivo" accept=".pdf,.md,.markdown,.txt,text/markdown,text/plain,application/pdf" style="width:100%; color:#c9d1d9;">
-                    <small style="color: var(--text-muted); display:block; margin-top:4px;">Se extraerá el enunciado del archivo. El título es opcional (si lo dejas vacío, se usa el nombre del archivo).</small>
+                    <input type="file" id="reto-subir-archivo" accept=".pdf,.md,.markdown,.txt,text/markdown,text/plain,application/pdf">
+                    <small>Se extraerá el enunciado del archivo. El título es opcional (si lo dejas vacío, se usa el nombre del archivo).</small>
                 </div>
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
@@ -298,17 +282,17 @@
                 </div>
             </div>
 
-            <div id="reto-form-propuestos" style="display:none; margin-top: 18px;">
-                <div id="reto-lista-propuestos" style="max-height: 300px; overflow-y: auto;">
-                    <p class="texto-vacio" style="color: var(--text-muted);">Cargando…</p>
+            <div id="reto-form-propuestos" class="reto-subform" style="display:none;">
+                <div id="reto-lista-propuestos" class="lista-propuestos">
+                    <p class="texto-vacio">Cargando…</p>
                 </div>
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
                 </div>
             </div>
 
-            <div id="reto-form-test" style="display:none; margin-top: 18px;">
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 12px;">
+            <div id="reto-form-test" class="reto-subform" style="display:none;">
+                <p class="modal-descripcion">
                     La IA generará un test de teoría a partir de los apuntes oficiales del tema. Nadie mira tus resultados: es solo para que repases.
                 </p>
                 <div class="form-group">
@@ -337,9 +321,9 @@
                 </div>
             </div>
 
-            <div id="reto-cargando" style="display:none; text-align:center; padding: 24px 0;">
+            <div id="reto-cargando" class="carga-centrada" style="display:none;">
                 <div class="radar-spinner"></div>
-                <p style="color: var(--text-muted);" id="reto-cargando-texto">Preparando tu reto…</p>
+                <p id="reto-cargando-texto">Preparando tu reto…</p>
             </div>
         </div>
     </div>
@@ -368,11 +352,11 @@
         <aside class="reto-indep">
             <h3 title="Indicadores orientativos, no una calificación">Tu progreso</h3>
             <div class="medidor-anillo" id="reto-medidor" title="Autonomía: cuánto lo has resuelto sin depender de la ayuda del tutor">
-                <svg width="180" height="180" viewBox="0 0 180 180">
-                    <circle cx="90" cy="90" r="78" fill="none" stroke="var(--border-color)" stroke-width="14"/>
+                <svg viewBox="0 0 180 180">
+                    <circle cx="90" cy="90" r="78" fill="none" stroke="var(--border-color)" stroke-width="10"/>
                     <circle id="reto-anillo-progreso" cx="90" cy="90" r="78" fill="none" stroke="var(--primary)"
-                            stroke-width="14" stroke-linecap="round"
-                            stroke-dasharray="490" stroke-dashoffset="490" style="transition: stroke-dashoffset 0.8s ease, stroke 0.8s ease;"/>
+                            stroke-width="10" stroke-linecap="round"
+                            stroke-dasharray="490" stroke-dashoffset="490"/>
                 </svg>
                 <div class="valor">
                     <span class="num" id="reto-indep-num">0%</span>
@@ -383,15 +367,13 @@
                 Pulsa <b>Recargar</b> tras escribir código para evaluar tu progreso.
             </div>
             <!-- Autoría: métrica SEPARADA (código propio vs copiado del tutor). Orientativa. -->
-            <div class="medidor-autoria" id="reto-autoria-bloque" style="display:none; margin-top:14px;"
+            <div class="medidor-autoria" id="reto-autoria-bloque" style="display:none;"
                  title="Autoría: qué parte del código entregado es tuya frente a fragmentos que escribió el tutor. Indicador orientativo, no una acusación de copia.">
-                <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.8rem; color:var(--text-muted);">
+                <div class="autoria-cabecera">
                     <span>✍️ Autoría del código</span>
-                    <b id="reto-autoria-num" style="color:var(--text-main);">—</b>
+                    <b id="reto-autoria-num">—</b>
                 </div>
-                <div style="height:8px; background:var(--border-color); border-radius:6px; overflow:hidden; margin-top:5px;">
-                    <div id="reto-autoria-barra" style="height:100%; width:0; background:#3fb950; transition:width 0.8s ease, background 0.8s ease;"></div>
-                </div>
+                <div class="autoria-pista"><div id="reto-autoria-barra"></div></div>
             </div>
             <div class="comentario-eval" id="reto-comentario-eval" style="display:none;"></div>
             <button class="btn-recargar" onclick="retoRecargarPorcentaje()" id="reto-btn-recargar">
@@ -417,7 +399,7 @@
         <div class="sub">Has completado todos los microhitos del reto.</div>
         <div class="indep-final" id="exito-indep">0%</div>
         <div class="sub">Porcentaje de Independencia logrado</div>
-        <div class="sub" id="exito-tiempo" style="margin-top:8px;"></div>
+        <div class="sub" id="exito-tiempo"></div>
         <button class="btn-confirm" onclick="cerrarPantallaExito()">Volver al inicio</button>
     </div>
 
@@ -452,34 +434,31 @@
 
     <!-- MODAL VALIDADOR DE APUNTES -->
     <div id="modal-validador" class="modal-overlay">
-        <div class="modal-content-card" style="max-width: 720px;">
+        <div class="modal-content-card modal-amplio">
             <div class="modal-header-bar">
                 <h2>📝 Validador de Apuntes</h2>
                 <button class="btn-cerrar-modal" onclick="cerrarModalValidador()">&times;</button>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 16px;">
+            <p class="modal-descripcion">
                 Sube un archivo (PDF/TXT) o pega tus apuntes. La IA los comparará con el temario oficial del profesor.
                 Si te convence, guárdalos en "Mis Conocimientos" y el tutor los usará solo para ti.
             </p>
 
             <div class="form-group">
                 <label>Título de los apuntes:</label>
-                <input type="text" id="validador-titulo" placeholder="Ej: Mis notas de Herencia y Polimorfismo"
-                       style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box;">
+                <input type="text" id="validador-titulo" class="campo" placeholder="Ej: Mis notas de Herencia y Polimorfismo">
             </div>
 
             <div class="form-group">
                 <label>Archivo (PDF o TXT):</label>
                 <input type="file" id="validador-archivo" accept=".pdf,.txt,application/pdf,text/plain"
-                       onchange="validadorArchivoElegido(this)"
-                       style="width:100%; color: var(--text-muted); font-size:0.85rem;">
-                <div id="validador-archivo-nombre" style="font-size:0.78rem; color: var(--text-muted); margin-top:4px;"></div>
+                       onchange="validadorArchivoElegido(this)">
+                <small id="validador-archivo-nombre"></small>
             </div>
 
             <div class="form-group">
                 <label>…o pega tu texto:</label>
-                <textarea id="validador-texto" rows="5" placeholder="Pega aquí tus apuntes…"
-                          style="width:100%; padding:10px; background: var(--bg-body); border:1px solid var(--border-color); border-radius:8px; color:#fff; box-sizing:border-box; resize:vertical;"></textarea>
+                <textarea id="validador-texto" class="campo" rows="5" placeholder="Pega aquí tus apuntes…"></textarea>
             </div>
 
             <div class="modal-buttons">
@@ -487,18 +466,16 @@
                 <button class="btn-confirm" id="btn-validar-apunte" onclick="validarApunte()">🔍 Validar</button>
             </div>
 
-            <div id="validador-cargando" style="display:none; text-align:center; padding: 20px 0;">
+            <div id="validador-cargando" class="carga-centrada" style="display:none;">
                 <div class="radar-spinner"></div>
-                <p style="color: var(--text-muted);">La IA está comparando tus apuntes con el temario oficial…</p>
+                <p>La IA está comparando tus apuntes con el temario oficial…</p>
             </div>
 
-            <div id="validador-resultado" style="display:none; margin-top: 18px;">
-                <div class="section-title" style="margin-bottom: 10px;">Resultado de la validación</div>
+            <div id="validador-resultado" class="reto-subform" style="display:none;">
+                <div class="section-title">Resultado de la validación</div>
                 <div id="validador-feedback" class="apuntes-cuerpo"></div>
-                <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:16px;">
-                    <button class="btn-confirm" onclick="guardarApunte()" style="background:#3fb950; border-color:#3fb950;">
-                        💾 Guardar en Mis Conocimientos
-                    </button>
+                <div class="modal-buttons">
+                    <button class="btn-guardar-ok" onclick="guardarApunte()">💾 Guardar en Mis Conocimientos</button>
                 </div>
             </div>
         </div>
@@ -510,51 +487,48 @@
     </div>
 
     <!-- BOTÓN Y MODAL DE AYUDA -->
-    <button id="btn-help-floating" onclick="abrirModalAyuda()" title="¿Cómo usar el Tutor Socrático?">
-        ?
-    </button>
-    <div id="modal-ayuda" class="modal-overlay" style="display: none; z-index: 2000;">
-        <div class="modal-content-card" style="max-width: 550px; text-align: left; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: var(--primary);">🤖 ¿Cómo usar el Tutor Socrático?</h3>
-                <button onclick="cerrarModalAyuda()" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
+    <button id="btn-help-floating" onclick="abrirModalAyuda()" title="¿Cómo usar el Tutor Socrático?">?</button>
+    <div id="modal-ayuda" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-content-card modal-medio">
+            <div class="modal-header-bar">
+                <h3>🤖 ¿Cómo usar el Tutor Socrático?</h3>
+                <button class="btn-cerrar-modal" onclick="cerrarModalAyuda()">&times;</button>
             </div>
-            <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
+            <div class="modal-cuerpo-texto">
                 <p>¡Bienvenido! Este tutor no te da el código resuelto: te guía con preguntas para que lo descubras tú mismo.</p>
-                <ul style="padding-left: 20px; margin-bottom: 20px; color: var(--text-muted);">
-                    <li style="margin-bottom: 8px;"><strong>💬 Chat guiado:</strong> pregunta tus dudas de teoría. Selecciona un tema en la barra lateral para centrar el estudio en esos apuntes oficiales.</li>
-                    <li style="margin-bottom: 8px;"><strong>🚀 Modo Reto:</strong> resuelve ejercicios paso a paso (microhitos) con editor de código integrado. Puedes generar uno con IA, subir el tuyo (texto, <strong>PDF o Markdown</strong>) o elegir uno propuesto por tu profesor.</li>
-                    <li style="margin-bottom: 8px;"><strong>📥 Apuntes de Repaso IA:</strong> genera al instante un resumen estructurado del tema.</li>
-                    <li style="margin-bottom: 8px;"><strong>📝 Validador de Apuntes:</strong> sube tus apuntes propios y comprueba si están completos y correctos frente al temario.</li>
-                    <li style="margin-bottom: 8px;"><strong>🔥 Racha diaria:</strong> entra cada día para mantener tu racha y no perder el ritmo de estudio.</li>
+                <ul>
+                    <li><strong>💬 Chat guiado:</strong> pregunta tus dudas de teoría. Selecciona un tema en la barra lateral para centrar el estudio en esos apuntes oficiales.</li>
+                    <li><strong>🚀 Modo Reto:</strong> resuelve ejercicios paso a paso (microhitos) con editor de código integrado. Puedes generar uno con IA, subir el tuyo (texto, <strong>PDF o Markdown</strong>) o elegir uno propuesto por tu profesor.</li>
+                    <li><strong>📥 Apuntes de Repaso IA:</strong> genera al instante un resumen estructurado del tema.</li>
+                    <li><strong>📝 Validador de Apuntes:</strong> sube tus apuntes propios y comprueba si están completos y correctos frente al temario.</li>
+                    <li><strong>🔥 Racha diaria:</strong> entra cada día para mantener tu racha y no perder el ritmo de estudio.</li>
+                    <li><strong>🎨 Tema visual:</strong> cambia los colores de la aplicación desde el menú ⋮ de arriba a la derecha.</li>
                 </ul>
-                <p style="margin: 0 0 16px; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
-                    <em>Recuerda: ante cualquier duda profunda, el tutor nunca sustituye a tu profesor. ¡Ve a tutoría!</em>
-                </p>
-                <div style="border-top: 1px solid var(--border); padding-top: 14px; text-align: center;">
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-                        💌 <strong>Escríbenos qué opinas</strong> o si has tenido algún fallo:<br>
-                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=alvaro.rodsam@uma.es&su=Opini%C3%B3n%20sobre%20el%20Tutor%20Socr%C3%A1tico&body=Hola%20%C3%81lvaro%2C%0A%0AMi%20opini%C3%B3n%2Fsugerencia%2Ffallo%20encontrado%3A%0A%0A" target="_blank" rel="noopener" style="color: var(--primary); text-decoration: underline; text-underline-offset: 2px;">alvaro.rodsam@uma.es</a>
-                    </p>
+                <p class="texto-muted texto-pequeno"><em>Recuerda: ante cualquier duda profunda, el tutor nunca sustituye a tu profesor. ¡Ve a tutoría!</em></p>
+                <div class="modal-pie">
+                    💌 <strong>Escríbenos qué opinas</strong> o si has tenido algún fallo:<br>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=alvaro.rodsam@uma.es&su=Opini%C3%B3n%20sobre%20el%20Tutor%20Socr%C3%A1tico&body=Hola%20%C3%81lvaro%2C%0A%0AMi%20opini%C3%B3n%2Fsugerencia%2Ffallo%20encontrado%3A%0A%0A" target="_blank" rel="noopener">alvaro.rodsam@uma.es</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL DE CONSENTIMIENTO DE DATOS (primera vez del alumno) -->
-    <div id="modal-consentimiento" class="modal-overlay" style="display:none; z-index:2500;">
-        <div class="modal-content-card" style="max-width:560px; text-align:left;">
-            <h3 style="margin:0 0 14px; color:var(--primary);">🔒 Protección de datos</h3>
-            <div style="color:var(--text-main); font-size:0.92rem; line-height:1.55; max-height:42vh; overflow-y:auto;">
+    <div id="modal-consentimiento" class="modal-overlay" style="z-index:2500;">
+        <div class="modal-content-card modal-medio">
+            <div class="modal-header-bar">
+                <h3>🔒 Protección de datos</h3>
+            </div>
+            <div class="consentimiento-texto">
                 <p>Para poder guiarte, el Tutor Socrático <strong>registra tus consultas e interacciones</strong> (preguntas, ejercicios y progreso) con fines exclusivamente <strong>educativos</strong>: ayudarte a aprender y permitir que tu profesorado mejore la enseñanza de la asignatura.</p>
                 <p>Tus preguntas se envían al proveedor del modelo de IA (<strong>Anthropic</strong>) únicamente para generar las respuestas. No se ceden tus datos a terceros con otros fines. El tratamiento se realiza conforme a la normativa de protección de datos de la universidad.</p>
-                <p style="color:var(--text-muted); font-size:0.85rem;">Para más información o para ejercer tus derechos, contacta con el profesorado de la asignatura.</p>
+                <p class="texto-muted texto-pequeno">Para más información o para ejercer tus derechos, contacta con el profesorado de la asignatura.</p>
             </div>
-            <label style="display:flex; align-items:flex-start; gap:10px; margin:16px 0; cursor:pointer;">
-                <input type="checkbox" id="check-consentimiento" onchange="document.getElementById('btn-aceptar-consentimiento').disabled = !this.checked;" style="margin-top:3px;">
-                <span style="font-size:0.9rem;">He leído y acepto el tratamiento de mis datos con fines educativos.</span>
+            <label class="consentimiento-check">
+                <input type="checkbox" id="check-consentimiento" onchange="document.getElementById('btn-aceptar-consentimiento').disabled = !this.checked;">
+                <span>He leído y acepto el tratamiento de mis datos con fines educativos.</span>
             </label>
-            <div style="display:flex; justify-content:flex-end;">
+            <div class="modal-buttons">
                 <button id="btn-aceptar-consentimiento" class="btn-confirm" onclick="aceptarConsentimiento()" disabled>Aceptar y continuar</button>
             </div>
         </div>

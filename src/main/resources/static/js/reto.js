@@ -46,7 +46,7 @@ function retoVolverOpciones() {
     ['reto-form-crear', 'reto-form-subir', 'reto-form-propuestos', 'reto-form-test', 'reto-cargando']
         .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     document.querySelector('#modal-reto .reto-opciones').style.display = 'grid';
-    retoMostrarCarpeta(true);
+    retoMostrarCarpeta(false);
 }
 
 function retoMostrarSeccion(id) {
@@ -263,32 +263,32 @@ async function retoSubirArchivo() {
 
 async function retoCargarPropuestos() {
     const cont = document.getElementById('reto-lista-propuestos');
-    cont.innerHTML = '<p class="texto-vacio" style="color: var(--text-muted);">Cargando…</p>';
+    cont.innerHTML = '<p class="texto-vacio">Cargando…</p>';
     try {
         const res = await fetch('/api/reto/propuestos');
         const lista = await res.json();
         if (!Array.isArray(lista) || lista.length === 0) {
-            cont.innerHTML = '<p class="texto-vacio" style="color: var(--text-muted);">Todavía no hay ejercicios propuestos por el profesor.</p>';
+            cont.innerHTML = '<p class="texto-vacio">Todavía no hay ejercicios propuestos por el profesor.</p>';
             return;
         }
         cont.innerHTML = '';
         lista.forEach(e => {
             const div = document.createElement('div');
             div.className = 'radar-ejercicio';
-            div.style.cursor = 'pointer';
+            div.classList.add('clicable');
             div.onclick = () => retoIniciarDesdeEjercicio(e.ejercicioId, true);
             div.innerHTML = `
                 <div class="cab">
                     <span class="titulo">${e.completadoPorMi ? '✅ ' : ''}${escaparHtml(e.titulo)}</span>
                     <span class="radar-chip">${e.nMicrohitos} hitos</span>
                 </div>
-                <div style="font-size:0.8rem; color: var(--text-muted); margin-top:4px;">
+                <div class="texto-muted texto-pequeno">
                     ${e.dificultad ? 'Dificultad: ' + escaparHtml(e.dificultad) : ''} ${e.tema ? '· ' + escaparHtml(e.tema) : ''}
                 </div>`;
             cont.appendChild(div);
         });
     } catch (e) {
-        cont.innerHTML = '<p style="color:#f85149;">Error de conexión al cargar los ejercicios propuestos.</p>';
+        cont.innerHTML = '<p class="texto-error">Error de conexión al cargar los ejercicios propuestos.</p>';
     }
 }
 
@@ -365,8 +365,8 @@ function actualizarMedidor(pct) {
     const anillo = document.getElementById('reto-anillo-progreso');
     const num = document.getElementById('reto-indep-num');
     anillo.style.strokeDashoffset = CIRCUNFERENCIA_ANILLO * (1 - pct / 100);
-    let color = '#d29922';               // ámbar (baja)
-    if (pct >= 70) color = '#3fb950';    // verde (alta)
+    let color = 'var(--warning)';
+    if (pct >= 70) color = 'var(--success)';
     else if (pct >= 40) color = 'var(--primary)';
     anillo.style.stroke = color;
     num.innerText = pct + '%';
@@ -417,7 +417,7 @@ async function retoEnviarMensaje() {
         });
         const data = await res.json();
         const burbuja = document.getElementById(id);
-        if (!res.ok) { burbuja.innerHTML = `<span style="color:#f85149;">${data.mensaje || 'Error del servidor.'}</span>`; return; }
+        if (!res.ok) { burbuja.innerHTML = `<span class="texto-error">${data.mensaje || 'Error del servidor.'}</span>`; return; }
         retoEstado.historial.push({ role: 'assistant', content: data.mensaje });
         marked.setOptions({ breaks: true });
         burbuja.innerHTML = marked.parse(data.mensaje || '');
@@ -523,7 +523,7 @@ function actualizarAutoria(pct) {
     if (num) num.innerText = pct + '%';
     if (barra) {
         barra.style.width = pct + '%';
-        barra.style.background = pct >= 70 ? '#3fb950' : (pct >= 40 ? 'var(--primary)' : '#f85149');
+        barra.style.background = pct >= 70 ? 'var(--success)' : (pct >= 40 ? 'var(--primary)' : 'var(--danger)');
     }
 }
 

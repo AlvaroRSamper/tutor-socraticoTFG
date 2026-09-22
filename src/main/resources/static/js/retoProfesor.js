@@ -28,12 +28,12 @@ function agregarFilaHito(titulo, descripcion, criterio) {
     fila.dataset.hito = contadorHitos;
     fila.innerHTML = `
         <div class="orden-badge">${cont.children.length + 1}</div>
-        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+        <div class="hito-editor-campos">
             <input type="text" class="hito-titulo" placeholder="Título del hito (ej: Crear struct)" value="${escaparHtmlProf(titulo || '')}">
             <input type="text" class="hito-desc" placeholder="Descripción (qué debe lograr el alumno)" value="${escaparHtmlProf(descripcion || '')}">
             <input type="text" class="hito-criterio" placeholder="Criterio de validación (cómo saber si el código lo cumple)" value="${escaparHtmlProf(criterio || '')}">
         </div>
-        <button type="button" class="btn-reiniciar" onclick="eliminarFilaHito(this)" title="Eliminar" style="padding:4px 10px;">✕</button>`;
+        <button type="button" class="btn-reiniciar" onclick="eliminarFilaHito(this)" title="Eliminar">✕</button>`;
     cont.appendChild(fila);
 }
 
@@ -51,11 +51,11 @@ async function cargarEnunciadoDesdeArchivo() {
     const archivo = input && input.files ? input.files[0] : null;
     const estado = document.getElementById('estado-prop');
     if (!archivo) {
-        estado.style.color = '#f85149';
+        estado.className = 'estado-msg error';
         estado.innerText = 'Elige un archivo PDF, Markdown o TXT.';
         return;
     }
-    estado.style.color = '#8b949e';
+    estado.className = 'estado-msg';
     estado.innerText = 'Extrayendo el enunciado del archivo…';
     const datos = new FormData();
     datos.append('archivo', archivo);
@@ -67,15 +67,15 @@ async function cargarEnunciadoDesdeArchivo() {
         });
         const data = await res.json();
         if (!res.ok) {
-            estado.style.color = '#f85149';
+            estado.className = 'estado-msg error';
             estado.innerText = data.mensaje || 'No se pudo procesar el archivo.';
             return;
         }
         document.getElementById('prop-enunciado').value = data.texto || '';
-        estado.style.color = '#3fb950';
+        estado.className = 'estado-msg ok';
         estado.innerText = '✓ Enunciado cargado. Revísalo y genera los microhitos.';
     } catch (e) {
-        estado.style.color = '#f85149';
+        estado.className = 'estado-msg error';
         estado.innerText = 'Error de conexión al procesar el archivo.';
     }
 }
@@ -85,13 +85,13 @@ async function generarMicrohitosIa() {
     const tema = document.getElementById('prop-tema').value.trim();
     const estado = document.getElementById('estado-prop');
     if (!enunciado) {
-        estado.style.color = '#f85149';
+        estado.className = 'estado-msg error';
         estado.innerText = 'Escribe primero el enunciado para generar los microhitos.';
         return;
     }
     const boton = document.getElementById('btn-generar-hitos');
     boton.disabled = true;
-    estado.style.color = '#8b949e';
+    estado.className = 'estado-msg';
     estado.innerText = 'Generando microhitos con IA…';
     try {
         const res = await fetch('/api/reto/profesor/microhitos', {
@@ -100,22 +100,22 @@ async function generarMicrohitosIa() {
             body: JSON.stringify({ enunciado, lenguaje: 'java', tema })
         });
         if (!res.ok) {
-            estado.style.color = '#f85149';
+            estado.className = 'estado-msg error';
             estado.innerText = 'No se pudieron generar los microhitos.';
             return;
         }
         const hitos = await res.json();
         if (!Array.isArray(hitos) || hitos.length === 0) {
-            estado.style.color = '#f85149';
+            estado.className = 'estado-msg error';
             estado.innerText = 'La IA no devolvió microhitos. Prueba a detallar más el enunciado.';
             return;
         }
         document.getElementById('prop-hitos').innerHTML = '';
         hitos.forEach(h => agregarFilaHito(h.titulo, h.descripcion, h.criterioValidacion));
-        estado.style.color = '#3fb950';
+        estado.className = 'estado-msg ok';
         estado.innerText = '✓ ' + hitos.length + ' microhitos generados. Revísalos y edítalos antes de publicar.';
     } catch (e) {
-        estado.style.color = '#f85149';
+        estado.className = 'estado-msg error';
         estado.innerText = 'Error de conexión al generar los microhitos.';
     } finally {
         boton.disabled = false;
@@ -142,11 +142,11 @@ async function publicarPropuesto(event) {
     });
 
     const estado = document.getElementById('estado-prop');
-    if (microhitos.length === 0) { estado.style.color = '#f85149'; estado.innerText = 'Añade al menos un microhito.'; return; }
+    if (microhitos.length === 0) { estado.className = 'estado-msg error'; estado.innerText = 'Añade al menos un microhito.'; return; }
 
     const boton = document.getElementById('btn-publicar-prop');
     boton.disabled = true;
-    estado.style.color = '#8b949e';
+    estado.className = 'estado-msg';
     estado.innerText = 'Publicando…';
     try {
         const res = await fetch('/api/reto/profesor/publicar', {
@@ -155,15 +155,15 @@ async function publicarPropuesto(event) {
             body: JSON.stringify({ titulo, enunciado, dificultad, tema, lenguaje: 'java', microhitos })
         });
         const data = await res.json();
-        if (!res.ok) { estado.style.color = '#f85149'; estado.innerText = data.mensaje || 'Error al publicar.'; return; }
-        estado.style.color = '#3fb950';
+        if (!res.ok) { estado.className = 'estado-msg error'; estado.innerText = data.mensaje || 'Error al publicar.'; return; }
+        estado.className = 'estado-msg ok';
         estado.innerText = '✓ ' + (data.mensaje || 'Publicado.');
         document.getElementById('form-propuesto').reset();
         document.getElementById('prop-hitos').innerHTML = '';
         agregarFilaHito();
         cargarRadarDocente();
     } catch (e) {
-        estado.style.color = '#f85149';
+        estado.className = 'estado-msg error';
         estado.innerText = 'Error de conexión al publicar.';
     } finally {
         boton.disabled = false;
@@ -221,7 +221,7 @@ async function cargarRadarDocente() {
             div.innerHTML = `
                 <div class="cab">
                     <span class="titulo">${escaparHtmlProf(e.titulo)}</span>
-                    <span>
+                    <span class="radar-chips">
                         <span class="radar-chip">${e.nCompletados}/${e.nAlumnos} completados</span>
                         <span class="radar-chip indep">Autonomía media: ${indepMedia}</span>
                         <span class="radar-chip indep">Autoría media: ${autoriaMedia}</span>
@@ -231,7 +231,7 @@ async function cargarRadarDocente() {
             cont.appendChild(div);
         });
     } catch (e) {
-        cont.innerHTML = '<p style="color:#f85149;">Error de conexión al cargar el Radar Docente.</p>';
+        cont.innerHTML = '<p class="texto-error">Error de conexión al cargar el Radar Docente.</p>';
     }
 }
 

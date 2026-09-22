@@ -11,16 +11,34 @@
         return true;
     }
 
-    const TEMAS_IDE = ['github-dark', 'dracula', 'monokai', 'one-dark'];
+    const SECCIONES = ['resumen', 'consultas', 'radar', 'retos'];
 
-    // Aplica un tema de IDE como clase del <body>, preservando la clase body-profesor.
-    function aplicarTemaIde(nombre) {
-        const tema = TEMAS_IDE.includes(nombre) ? nombre : 'github-dark';
-        document.body.classList.remove(...TEMAS_IDE.map(t => 'theme-' + t));
-        document.body.classList.add('theme-' + tema);
-    }
+    window.mostrarSeccion = (id) => {
+        const seccion = SECCIONES.includes(id) ? id : 'resumen';
+        SECCIONES.forEach(s => {
+            const panel = document.getElementById('seccion-' + s);
+            if (panel) panel.classList.toggle('activa', s === seccion);
+        });
+        document.querySelectorAll('.pestana').forEach(p => {
+            const activa = p.dataset.seccion === seccion;
+            p.classList.toggle('activa', activa);
+            p.setAttribute('aria-selected', activa ? 'true' : 'false');
+        });
+        if (location.hash !== '#' + seccion) history.replaceState(null, '', '#' + seccion);
+    };
 
-    window.previsualizarTemaIde = (nombre) => aplicarTemaIde(nombre);
+    window.toggleMenuProfesor = (e) => {
+        if (e) e.stopPropagation();
+        document.getElementById('menu-profesor').classList.toggle('show');
+    };
+
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('menu-profesor');
+        const boton = document.getElementById('btn-menu-profesor');
+        if (menu && menu.classList.contains('show') && !menu.contains(e.target) && !boton.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
 
     async function cargarResumen() {
         const respuesta = await fetch('/api/profesor/resumen');
@@ -92,7 +110,7 @@
             const etiqueta = document.createElement('div');
             etiqueta.className = 'barra-etiqueta';
             const racha = p.racha > 0
-                ? ` <span title="Racha actual de días seguidos" style="color:#f0883e;font-weight:600;font-size:.85rem;margin-left:6px;white-space:nowrap;">🔥${p.racha}</span>`
+                ? ` <span class="barra-racha" title="Racha actual de días seguidos">🔥${p.racha}</span>`
                 : '';
             etiqueta.innerHTML = escaparHtmlP(p.alumno) + racha;
 
@@ -121,11 +139,6 @@
 
             const utilidad = document.createElement('div');
             utilidad.className = 'barra-utilidad';
-            utilidad.style.marginLeft = '20px';
-            utilidad.style.color = '#10b981';
-            utilidad.style.fontWeight = '500';
-            utilidad.style.width = '75px';
-            utilidad.style.textAlign = 'right';
             utilidad.textContent = p.porcentajeUtil + '% útil';
 
             fila.appendChild(etiqueta);
@@ -246,9 +259,6 @@
                     const h1 = document.getElementById('titulo-profesor');
                     if (h1) h1.innerText = info.titulo;
                 }
-                if (info.colorTema) {
-                    aplicarTemaIde(info.colorTema);
-                }
             }
         } catch (e) {
             console.error('Error cargando info asignatura', e);
@@ -267,10 +277,6 @@
                 const inpPrm = document.getElementById('input-prompt-modal');
                 if (inpTit) inpTit.value = info.titulo || '';
                 if (inpPrm) inpPrm.value = info.systemPrompt || '';
-                const tema = info.colorTema || 'github-dark';
-                const selTema = document.getElementById('select-tema-ide');
-                if (selTema) selTema.value = tema;
-                aplicarTemaIde(tema);
                 const inpSens = document.getElementById('input-sensibilidad-modal');
                 if (inpSens) { inpSens.value = info.sensibilidad || 5; actualizarValorSensibilidad(inpSens.value); }
                 const inpEmail = document.getElementById('input-email-modal');
@@ -287,15 +293,15 @@
                             const nom = arc.trim();
                             if (!nom) return;
                             const item = document.createElement('div');
-                            item.style = "display: flex; justify-content: space-between; align-items: center; background: #21262d; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; color: #c9d1d9; border: 1px solid #30363d;";
+                            item.className = 'archivo-subido';
                             item.innerHTML = `
-                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;" title="${nom}">📄 ${nom}</span>
-                                <button type="button" onclick="borrarArchivoSubido('${nom}')" style="background: none; border: none; color: #f85149; cursor: pointer; font-weight: bold; font-size: 1.1rem; padding: 0 4px;" title="Borrar este PDF">&times;</button>
+                                <span title="${nom}">📄 ${nom}</span>
+                                <button type="button" onclick="borrarArchivoSubido('${nom}')" title="Borrar este PDF">&times;</button>
                             `;
                             listaCont.appendChild(item);
                         });
                     } else {
-                        listaCont.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #8b949e; text-align: center;">No hay archivos subidos previamente</p>';
+                        listaCont.innerHTML = '<p class="texto-vacio">No hay archivos subidos previamente</p>';
                     }
                 }
             }
@@ -348,7 +354,6 @@
         const estado = document.getElementById('estado-asignatura-modal');
         const titulo = document.getElementById('input-titulo-modal').value;
         const prompt = document.getElementById('input-prompt-modal').value;
-        const colorTema = document.getElementById('select-tema-ide').value;
         const archivos = document.getElementById('input-apuntes-modal').files;
 
         const inpSens = document.getElementById('input-sensibilidad-modal');
@@ -357,7 +362,6 @@
         const datos = new FormData();
         datos.append('titulo', titulo);
         datos.append('systemPrompt', prompt);
-        datos.append('colorTema', colorTema);
         if (inpSens) datos.append('sensibilidad', inpSens.value);
         if (inpEmail) datos.append('emailProfesor', inpEmail.value.trim());
         if (selDia) datos.append('diaInformeSemanal', selDia.value === '' ? '0' : selDia.value);
@@ -379,9 +383,6 @@
                 document.title = titulo + ' · Panel del Profesor';
                 const h1 = document.getElementById('titulo-profesor');
                 if (h1) h1.innerText = titulo;
-            }
-            if (colorTema) {
-                aplicarTemaIde(colorTema);
             }
             if (estado) estado.textContent = '¡Guardado correctamente! Cerrando panel…';
             setTimeout(() => {
@@ -417,14 +418,6 @@
             .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     }
 
-    window.abrirRadarDocente = () => {
-        const modal = document.getElementById('modal-radar');
-        ocultarVistasRadar();
-        const chooser = document.getElementById('radar-chooser');
-        if (chooser) chooser.style.display = 'block';
-        if (modal) modal.style.display = 'flex';
-    };
-
     window.volverChooserRadar = () => {
         ocultarVistasRadar();
         const chooser = document.getElementById('radar-chooser');
@@ -456,7 +449,7 @@
         } catch (e) {
             console.error("Error cargando Informe IA", e);
             const ren = document.getElementById('radar-render');
-            if (ren) ren.innerHTML = "<p style='color:#f85149;'>Error de conexión al obtener el informe.</p>";
+            if (ren) ren.innerHTML = "<p class='texto-error'>Error de conexión al obtener el informe.</p>";
             if (carga) carga.style.display = 'none';
             if (listo) listo.style.display = 'block';
         }
@@ -495,7 +488,7 @@
             wrap.innerHTML = html;
         } catch (e) {
             console.error('Error cargando alumnos con problemas', e);
-            if (wrap) wrap.innerHTML = "<p style='color:#f85149;'>Error de conexión al obtener el listado.</p>";
+            if (wrap) wrap.innerHTML = "<p class='texto-error'>Error de conexión al obtener el listado.</p>";
         }
     };
 
@@ -545,11 +538,6 @@
         return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    window.cerrarModalRadar = () => {
-        const modal = document.getElementById('modal-radar');
-        if (modal) modal.style.display = 'none';
-    };
-
     window.imprimirRadarPdf = () => {
         const ren = document.getElementById('radar-render');
         if (!ren) return;
@@ -581,6 +569,7 @@
     };
 
     window.onload = () => {
+        mostrarSeccion(location.hash.slice(1));
         cargarInfoAsignatura();
         cargarResumen();
         cargarPerfiles();

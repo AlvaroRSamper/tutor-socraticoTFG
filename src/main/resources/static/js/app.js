@@ -12,15 +12,6 @@
         return Object.assign({ 'X-XSRF-TOKEN': leerCookie('XSRF-TOKEN') }, cabecerasExtra || {});
     }
 
-    const TEMAS_IDE = ['github-dark', 'dracula', 'monokai', 'one-dark'];
-
-    // Aplica un tema de IDE como clase del <body>, sin pisar otras clases (ej. body-profesor).
-    function aplicarTemaIde(nombre) {
-        const tema = TEMAS_IDE.includes(nombre) ? nombre : 'github-dark';
-        document.body.classList.remove(...TEMAS_IDE.map(t => 'theme-' + t));
-        document.body.classList.add('theme-' + tema);
-    }
-
     function aplicarConfiguracionYTemas(data) {
         if (!data) return;
         // El historial se guarda por usuario, para que cada cuenta vea SOLO su conversación
@@ -32,9 +23,6 @@
             document.title = data.titulo + ' · Tutor Socrático';
             const h1 = document.getElementById('titulo-chat');
             if (h1) h1.innerText = data.titulo;
-        }
-        if (data.colorTema && data.colorTema.trim() !== "") {
-            aplicarTemaIde(data.colorTema);
         }
         const listaTemas = document.getElementById('lista-temas');
         if (listaTemas) {
@@ -92,28 +80,6 @@
                     window.location.href = '/profesor.html';
                     return;
                 }
-                const chk = await fetch('/api/tutor/temas');
-                const dataChk = await chk.json().catch(() => ({}));
-                if (dataChk.error === "ACCESO_NO_LTI") {
-                    document.getElementById('pantalla-login').innerHTML = `
-                        <div class="login-box" style="max-width: 500px; text-align: center;">
-                            <img src="logo-uma.png" alt="Logo UMA" class="login-logo">
-                            <h2 style="color: #f85149;">Acceso Restringido</h2>
-                            <p style="color: #c9d1d9; font-size: 0.95rem; line-height: 1.5; margin: 20px 0;">
-                                El Tutor Socrático está integrado exclusivamente con la plataforma universitaria.
-                                <br><br>
-                                <strong>Por favor, entra a la aplicación haciendo clic en el enlace oficial dentro de tu asignatura en el Campus Virtual (Moodle).</strong>
-                            </p>
-                            <div style="margin-top: 30px; border-top: 1px solid #30363d; padding-top: 20px;">
-                                <a href="javascript:void(0)" onclick="location.reload()" style="color: #58a6ff; font-size: 0.85rem; text-decoration: none;">¿Ya estás en Moodle? Reintentar</a>
-                                <br><br>
-                                <span style="font-size: 0.75rem; color: #8b949e;">¿Eres docente o administrador? <a href="javascript:void(0)" onclick="mostrarLoginManual()" style="color: #8b949e; text-decoration: underline;">Acceso manual</a></span>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('pantalla-login').style.display = 'flex';
-                    return;
-                }
                 document.getElementById('pantalla-login').style.display = 'none';
                 location.reload();
             } else {
@@ -150,54 +116,16 @@
     let historial = [];
     // Clave de localStorage del historial; se refina a 'historial_tutor_<usuario>' al conocer el usuario.
     let claveHistorial = 'historial_tutor';
-    window.mostrarLoginManual = () => {
-        document.getElementById('pantalla-login').innerHTML = `
-            <div class="login-box">
-                <img src="logo-uma.png" alt="Logo UMA" class="login-logo">
-                <h2>Tutor Socrático</h2>
-                <p class="login-subtitulo">Introduce el usuario y la contraseña que te ha facilitado tu profesor/a.</p>
-                <form id="form-login" onsubmit="event.preventDefault(); hacerLogin();">
-                    <div class="form-group">
-                        <label>Identificador:</label>
-                        <input type="text" id="login-id" maxlength="5" inputmode="numeric" autocomplete="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña:</label>
-                        <input type="password" id="login-pass" maxlength="64" autocomplete="current-password" required>
-                    </div>
-                    <p id="login-error" class="login-error" style="display:none;"></p>
-                    <button type="submit" class="btn-confirm login-submit">Entrar</button>
-                </form>
-            </div>
-        `;
-    };
 
     window.onload = async () => {
+        if (window.matchMedia('(max-width: 760px)').matches) {
+            document.getElementById('sidebar').classList.add('sidebar-closed');
+        }
         iniciarMascotaCafe();
         try {
             const res = await fetch('/api/tutor/temas');
             if (res.ok) {
                 const data = await res.json();
-                if (data.error === "ACCESO_NO_LTI") {
-                    document.getElementById('pantalla-login').innerHTML = `
-                        <div class="login-box" style="max-width: 500px; text-align: center;">
-                            <img src="logo-uma.png" alt="Logo UMA" class="login-logo">
-                            <h2 style="color: #f85149;">Acceso Restringido</h2>
-                            <p style="color: #c9d1d9; font-size: 0.95rem; line-height: 1.5; margin: 20px 0;">
-                                El Tutor Socrático está integrado exclusivamente con la plataforma universitaria.
-                                <br><br>
-                                <strong>Por favor, entra a la aplicación haciendo clic en el enlace oficial dentro de tu asignatura en el Campus Virtual (Moodle).</strong>
-                            </p>
-                            <div style="margin-top: 30px; border-top: 1px solid #30363d; padding-top: 20px;">
-                                <a href="javascript:void(0)" onclick="location.reload()" style="color: #58a6ff; font-size: 0.85rem; text-decoration: none;">¿Ya estás en Moodle? Reintentar</a>
-                                <br><br>
-                                <span style="font-size: 0.75rem; color: #8b949e;">¿Eres docente o administrador? <a href="javascript:void(0)" onclick="mostrarLoginManual()" style="color: #8b949e; text-decoration: underline;">Acceso manual</a></span>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('pantalla-login').style.display = 'flex';
-                    return;
-                }
                 document.getElementById('pantalla-login').style.display = 'none';
                 aplicarConfiguracionYTemas(data);
                 if (await comprobarConsentimiento()) {
@@ -261,8 +189,8 @@
 
     function agregarAvisoContexto(texto) {
         const wrapper = document.createElement('div');
-        wrapper.style = "text-align: center; margin: 15px 0;";
-        wrapper.innerHTML = `<span style="background: color-mix(in srgb, var(--primary) 15%, transparent); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">${texto}</span>`;
+        wrapper.className = 'aviso-contexto';
+        wrapper.innerHTML = `<span>${texto}</span>`;
         mensajesDiv.appendChild(wrapper);
         hacerScrollAbajo();
     }
@@ -307,7 +235,7 @@
             const json = await respuesta.json();
 
             if (!respuesta.ok) {
-                document.getElementById(idUnico).innerHTML = `<span style="color:#f85149;">${json.mensaje || "Error de conexión o del servidor."}</span>`;
+                document.getElementById(idUnico).innerHTML = `<span class="texto-error">${json.mensaje || "Error de conexión o del servidor."}</span>`;
                 historial.pop();
                 guardarHistorial();
                 return;
@@ -533,7 +461,7 @@
             const json = await respuesta.json();
 
             if (!respuesta.ok) {
-                document.getElementById(idUnico).innerHTML = `<span style="color:#f85149;">${json.mensaje || "Error de conexión o del servidor."}</span>`;
+                document.getElementById(idUnico).innerHTML = `<span class="texto-error">${json.mensaje || "Error de conexión o del servidor."}</span>`;
                 historial.pop();
                 guardarHistorial();
                 return;
@@ -702,7 +630,7 @@
         } catch (e) {
             console.error("Error generando repaso", e);
             const ren = document.getElementById('repaso-render');
-            if (ren) ren.innerHTML = "<p style='color:#f85149;'>Error de conexión al generar los apuntes.</p>";
+            if (ren) ren.innerHTML = "<p class='texto-error'>Error de conexión al generar los apuntes.</p>";
             if (carga) carga.style.display = 'none';
             if (listo) listo.style.display = 'block';
         }
@@ -879,7 +807,7 @@ async function cargarMisConocimientos() {
         const apuntes = await res.json();
         lista.innerHTML = '';
         if (!Array.isArray(apuntes) || apuntes.length === 0) {
-            lista.innerHTML = '<li class="texto-vacio-mini" style="font-size: 0.75rem; color: var(--text-muted); padding: 4px 8px; list-style: none;">Aún no has guardado apuntes propios.</li>';
+            lista.innerHTML = '<li class="texto-vacio-mini">Aún no has guardado apuntes propios.</li>';
             return;
         }
         apuntes.forEach(a => {
@@ -975,16 +903,12 @@ async function mostrarRachaDelDia(titulo) {
                 : "¡Buen trabajo! Un día más entrando a repasar.";
             
             document.getElementById('contenido-racha').innerHTML = `
-                <div style="text-align:center;">
-                    <img src="mascota-feliz.png" alt="Mascota" style="height:100px; margin-bottom:15px;">
-                    <h3 style="margin:0 0 10px 0; color:var(--primary);">🔥 ¡Racha Diaria!</h3>
-                    <p style="font-size:0.9rem; color:var(--text-main); margin-bottom:15px;">${msg}</p>
-                    <div style="font-size:1.5rem; font-weight:800; color:#fff; background:var(--primary); padding:10px; border-radius:10px; display:inline-block;">
-                        🔥 ${estado.rachaActual} días
-                    </div>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Racha máxima: ${estado.rachaMaxima} días</p>
-                    <button onclick="document.getElementById('modal-racha').style.display='none'" style="margin-top:15px; padding:8px 20px; background:var(--bg-secondary); border:none; border-radius:6px; color:var(--text-main); cursor:pointer;">Continuar</button>
-                </div>
+                <img src="mascota-feliz.png" alt="Mascota" class="racha-mascota">
+                <h3>¡Racha diaria!</h3>
+                <p>${msg}</p>
+                <div class="racha-contador">🔥 ${estado.rachaActual} días</div>
+                <p class="texto-pequeno">Racha máxima: ${estado.rachaMaxima} días</p>
+                <button class="btn-confirm" onclick="document.getElementById('modal-racha').style.display='none'">Continuar</button>
             `;
             document.getElementById('modal-racha').style.display = 'flex';
         }
@@ -992,9 +916,6 @@ async function mostrarRachaDelDia(titulo) {
         console.error("Error cargando racha", e);
     }
 }
-
-function iniciarMascotaCafe() { const v = document.getElementById('mascota-cafe'); if (!v || v.tagName !== 'IMG') return; const srcOriginal = v.src; const reproducir = () => { v.src = ''; setTimeout(() => { v.src = srcOriginal.split('?')[0]; }, 50); }; reproducir(); setInterval(reproducir, 20000); }
-
 
 /* --- Frases Motivadoras Mascota --- */
 (function() {
