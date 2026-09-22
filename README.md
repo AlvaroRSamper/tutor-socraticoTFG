@@ -109,19 +109,19 @@ La extensión tiene que crearla el usuario postgres. La primera migración inten
 #### 3. Descargar y compilar
 ```bash
 sudo useradd --system --create-home --home-dir /opt/tutor-socratico tutor
-sudo -u tutor git clone https://github.com/AlvaroRSamper/tutor-socraticoTFG /opt/tutor-socratico/app
-cd /opt/tutor-socratico/app
-sudo -u tutor chmod +x mvnw scripts/*.sh
-sudo -u tutor ./mvnw clean package
+sudo -u tutor git clone https://github.com/arodsam/tutor-socraticoTFG /opt/tutor-socratico/app
+sudo -u tutor bash -c 'cd /opt/tutor-socratico/app && chmod +x mvnw scripts/*.sh && ./mvnw clean package'
 ```
 El .jar queda en target/tutor-socratico-0.0.1-SNAPSHOT.jar.
+
+El cambio de directorio va dentro del bash del usuario tutor y no como un cd suelto. useradd crea el home con permisos 750 para tutor, así que desde tu propia cuenta no puedes entrar en esa carpeta y un cd normal falla con Permission denied. Por la misma razón los comodines sobre rutas de dentro de /opt/tutor-socratico hay que expandirlos ya dentro de sudo.
 
 #### 4. Cuentas de alumnos y profesores por fichero CSV
 Mientras el Campus Virtual no habilite el acceso LTI el profesorado y el alumnado entran con usuario y contraseña. Las cuentas se leen desde un fichero CSV generado con el script generar-usuarios.sh de la carpeta scripts. Por ejemplo para 60 alumnos y 2 profesores:
 
 ```bash
-sudo -u tutor ./scripts/generar-usuarios.sh --cantidad 60 --inicio 20001 --asignatura PROG1 --profesor 99001,99002 --salida /opt/tutor-socratico/cuentas
-sudo chmod 600 /opt/tutor-socratico/cuentas/*.csv
+sudo -u tutor /opt/tutor-socratico/app/scripts/generar-usuarios.sh --cantidad 60 --inicio 20001 --asignatura PROG1 --profesor 99001,99002 --salida /opt/tutor-socratico/cuentas
+sudo bash -c 'chmod 600 /opt/tutor-socratico/cuentas/*.csv'
 ```
 
 Esto genera usuarios.csv, que es el fichero que lee la app, y credenciales.csv, que es la lista para repartir. Los identificadores tienen que ser numéricos de hasta 5 dígitos. Si tienes la lista real de alumnos puedes pasarla con --ids alumnos.txt en vez de --cantidad. En la carpeta scripts hay un README con todas las opciones.
@@ -163,6 +163,8 @@ El correo solo se usa para el informe semanal al profesor. Si no hay cuenta de c
 
 Para la integración con Moodle LTI hay que añadir además los export de LTI_ISSUER LTI_CLIENT_ID LTI_JWKS_URI y LTI_AUTH_LOGIN_URL con los datos que da Moodle.
 
+Al ir embebida en un iframe de Moodle hace falta también autorizar al Campus como padre de la página, porque por defecto solo se permite a sí misma y el navegador bloquea el iframe. Se hace con export TUTOR_SECURITY_FRAME_ANCESTORS="'self' https://el-dominio-del-campus" y no requiere tocar código.
+
 Para una prueba rápida se puede lanzar el script a mano con sudo -u tutor /opt/tutor-socratico/arrancar.sh, pero la app se para al cerrar la terminal. Para dejarla en marcha se usa el servicio del paso siguiente.
 
 #### 6. Arrancar la app como servicio
@@ -196,7 +198,7 @@ journalctl -u tutor-socratico -f
 Si cambias alguna variable en arrancar.sh hay que reiniciar con sudo systemctl restart tutor-socratico.
 
 La app ha arrancado bien cuando en el log aparecen estas tres líneas. La primera solo sale la primera vez y en los siguientes arranques pone que el esquema ya está al día.
-- Successfully applied 9 migrations
+- Successfully applied 10 migrations
 - Usuarios cargados para login manual: 62
 - Started TutorSocraticoApplication
 
@@ -251,9 +253,7 @@ Cuando todo funcione entrega a cada alumno su fila de credenciales.csv y borra e
 
 #### Actualizar la app
 ```bash
-cd /opt/tutor-socratico/app
-sudo -u tutor git pull
-sudo -u tutor ./mvnw clean package
+sudo -u tutor bash -c 'cd /opt/tutor-socratico/app && git pull && ./mvnw clean package'
 sudo systemctl restart tutor-socratico
 ```
 Si hay migraciones nuevas Flyway las aplica solo al arrancar.
