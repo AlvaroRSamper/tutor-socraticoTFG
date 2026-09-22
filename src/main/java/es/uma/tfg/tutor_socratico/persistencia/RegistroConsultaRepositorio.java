@@ -4,10 +4,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Transactional(readOnly = true)
 public interface RegistroConsultaRepositorio extends JpaRepository<RegistroConsulta, Long> {
 
     interface ConteoPorClave {
@@ -37,8 +39,8 @@ public interface RegistroConsultaRepositorio extends JpaRepository<RegistroConsu
         where r.asignaturaId = :asignaturaId
           and (:alumno is null or r.username = :alumno)
           and (:tema is null or r.tema = :tema)
-          and (:desde is null or r.fechaHora >= :desde)
-          and (:hasta is null or r.fechaHora <= :hasta)
+          and (cast(:desde as LocalDateTime) is null or r.fechaHora >= :desde)
+          and (cast(:hasta as LocalDateTime) is null or r.fechaHora <= :hasta)
         order by r.fechaHora desc""")
     List<RegistroConsulta> buscarConFiltros(@Param("asignaturaId") String asignaturaId,
                                             @Param("alumno") String alumno,

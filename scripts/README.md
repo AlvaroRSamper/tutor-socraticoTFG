@@ -22,6 +22,9 @@ Desde esta carpeta `scripts/`:
 ./generar-usuarios.sh --cantidad 60 --asignatura PROG1 --profesor 99001
 ```
 
+Si la asignatura tiene varios profesores, sepáralos por comas (`-ProfesorId 99001,99002` en
+PowerShell, `--profesor 99001,99002` en Bash). Todos quedan en la misma asignatura.
+
 Esto crea dos ficheros:
 
 - `usuarios.csv` — la **semilla** que lee la aplicación (`id,password,rol,asignatura`).
