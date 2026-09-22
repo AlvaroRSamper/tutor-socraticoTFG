@@ -2,6 +2,13 @@ package es.uma.tfg.tutor_socratico.perfil;
 
 public class PerfilAlumno {
 
+    public static final int NIVEL_ANDAMIAJE_MIN = 0;
+    public static final int NIVEL_ANDAMIAJE_MAX = 3;
+    public static final int NIVEL_ANDAMIAJE_INICIAL = 1;
+
+    private static final int TURNOS_PARA_SUBIR = 2;
+    private static final int TURNOS_PARA_BAJAR = 4;
+
     private int contadorTeorico = 1;
     private int contadorPractico = 1;
     private int iteracionChat = 0;
@@ -10,6 +17,10 @@ public class PerfilAlumno {
     private int rachaNoUtil = 0;
     private int contadorUtil = 0;
     private int contadorNoUtil = 0;
+    private int nivelAndamiaje = NIVEL_ANDAMIAJE_INICIAL;
+    private int turnosAtascado = 0;
+    private int turnosSueltos = 0;
+    private Long ultimaConsultaCalado = null;
 
     public PerfilAlumno() {
     }
@@ -28,6 +39,56 @@ public class PerfilAlumno {
         this.rachaNoUtil = rachaNoUtil;
         this.contadorUtil = contadorUtil;
         this.contadorNoUtil = contadorNoUtil;
+    }
+
+    public int nivelAndamiaje() {
+        return nivelAndamiaje;
+    }
+
+    public void setNivelAndamiaje(int nivelAndamiaje) {
+        this.nivelAndamiaje = Math.max(NIVEL_ANDAMIAJE_MIN, Math.min(NIVEL_ANDAMIAJE_MAX, nivelAndamiaje));
+    }
+
+    public int turnosAtascado() {
+        return turnosAtascado;
+    }
+
+    public void setTurnosAtascado(int turnosAtascado) {
+        this.turnosAtascado = Math.max(0, turnosAtascado);
+    }
+
+    public int turnosSueltos() {
+        return turnosSueltos;
+    }
+
+    public void setTurnosSueltos(int turnosSueltos) {
+        this.turnosSueltos = Math.max(0, turnosSueltos);
+    }
+
+    public Long ultimaConsultaCalado() {
+        return ultimaConsultaCalado;
+    }
+
+    public void setUltimaConsultaCalado(Long ultimaConsultaCalado) {
+        this.ultimaConsultaCalado = ultimaConsultaCalado;
+    }
+
+    public void registrarTurnoDeCalado(boolean necesitoMasAyuda) {
+        if (necesitoMasAyuda) {
+            turnosSueltos = 0;
+            turnosAtascado++;
+            if (turnosAtascado >= TURNOS_PARA_SUBIR) {
+                setNivelAndamiaje(nivelAndamiaje + 1);
+                turnosAtascado = 0;
+            }
+        } else {
+            turnosAtascado = 0;
+            turnosSueltos++;
+            if (turnosSueltos >= TURNOS_PARA_BAJAR) {
+                setNivelAndamiaje(nivelAndamiaje - 1);
+                turnosSueltos = 0;
+            }
+        }
     }
 
     public int contadorTeorico() {

@@ -334,6 +334,7 @@ input[type="checkbox"], input[type="range"] { accent-color: var(--primary); }
 .accion-sidebar {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     width: 100%;
     padding: 7px 10px;
@@ -343,7 +344,7 @@ input[type="checkbox"], input[type="range"] { accent-color: var(--primary); }
     border-radius: var(--radius-sm);
     font-size: 0.84rem;
     font-weight: 500;
-    text-align: left;
+    text-align: center;
     cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
 }
@@ -377,6 +378,16 @@ input[type="checkbox"], input[type="range"] { accent-color: var(--primary); }
     font-weight: 500;
 }
 .topic-item.general-topic { margin-bottom: 4px; }
+.topic-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.tendencia-tema {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    line-height: 1;
+    cursor: help;
+}
+.tendencia-sube { color: var(--success); }
+.tendencia-baja { color: var(--text-muted); opacity: 0.75; }
 
 .pie-sidebar { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color); text-align: center; }
 .pie-sidebar p { margin: 0 0 4px; font-size: 0.68rem; line-height: 1.35; color: var(--text-muted); }
@@ -706,6 +717,29 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
 .btn-val:hover { background: var(--accent-soft); color: var(--text-main); border-color: var(--border-strong); }
 .btn-val.activo-pos { background: var(--success-bg); border-color: var(--success); color: var(--success); }
 .btn-val.activo-neg { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+.btn-mas-pista {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 5px 12px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.btn-mas-pista:hover { background: var(--accent-soft); color: var(--text-main); border-color: var(--primary); }
+
+.capa-revelada {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+}
 
 /* ==========================================================================
    LOGIN

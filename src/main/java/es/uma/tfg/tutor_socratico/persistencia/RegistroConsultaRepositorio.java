@@ -64,4 +64,14 @@ public interface RegistroConsultaRepositorio extends JpaRepository<RegistroConsu
     List<RegistroConsulta> buscarChatDesde(@Param("asignaturaId") String asignaturaId,
                                            @Param("desde") LocalDateTime desde,
                                            Pageable pageable);
+
+    @Query("""
+        select r from RegistroConsulta r
+        where r.username = :username
+          and r.asignaturaId = :asignaturaId
+          and r.nivelRevelado is not null
+        order by r.fechaHora desc""")
+    List<RegistroConsulta> buscarTurnosDeCalado(@Param("username") String username,
+                                                @Param("asignaturaId") String asignaturaId,
+                                                Pageable pageable);
 }

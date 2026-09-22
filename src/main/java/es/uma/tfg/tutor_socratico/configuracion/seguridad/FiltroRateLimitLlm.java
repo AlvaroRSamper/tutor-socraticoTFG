@@ -23,6 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class FiltroRateLimitLlm extends OncePerRequestFilter {
 
+    private static final java.util.Set<String> RUTAS_SIN_LLM = java.util.Set.of(
+            "/api/reto/tiempo", "/api/tutor/revelacion", "/api/tutor/tendencias");
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
     private final int capacidad;
     private final int minutos;
@@ -37,7 +40,7 @@ public class FiltroRateLimitLlm extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String ruta = rutaRelativa(request);
-        if (ruta.equals("/api/reto/tiempo")) return true;
+        if (RUTAS_SIN_LLM.contains(ruta)) return true;
         return !(ruta.startsWith("/api/tutor/") || ruta.startsWith("/api/reto/"));
     }
 

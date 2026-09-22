@@ -62,4 +62,6 @@ public class RegistroConsulta {
     private String fase;
 
     private Integer iteracion;
+
+    private Integer nivelRevelado;
 }

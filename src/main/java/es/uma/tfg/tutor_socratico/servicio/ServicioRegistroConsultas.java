@@ -1,17 +1,28 @@
 package es.uma.tfg.tutor_socratico.servicio;
 
+import es.uma.tfg.tutor_socratico.dto.TendenciaTema;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroConsulta;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroConsulta.TipoConsulta;
 import es.uma.tfg.tutor_socratico.persistencia.RegistroConsultaRepositorio;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
 @Service
 public class ServicioRegistroConsultas {
+
+    private static final int VENTANA_TENDENCIA = 5;
+    private static final int MIN_MUESTRAS_POR_BLOQUE = 3;
+    private static final int MAX_TURNOS_ANALIZADOS = 200;
+    private static final double UMBRAL_TENDENCIA = 0.3;
 
     private final RegistroConsultaRepositorio repositorio;
     private final es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio perfilAprendizajeServicio;
@@ -74,6 +85,90 @@ public class ServicioRegistroConsultas {
             
             return true;
         }).orElse(false);
+    }
+
+    public boolean necesitoMasAyuda(Long consultaId) {
+        if (consultaId == null) return false;
+        return repositorio.findById(consultaId).map(reg -> {
+            boolean destapoCapas = reg.getNivelRevelado() != null && reg.getNivelRevelado() > 0;
+            boolean valoroMejorable = reg.getValoracion() != null && reg.getValoracion() == -1;
+            return destapoCapas || valoroMejorable;
+        }).orElse(false);
+    }
+
+    public void marcarTurnoDeCalado(Long consultaId) {
+        if (consultaId == null) return;
+        repositorio.findById(consultaId).ifPresent(reg -> {
+            if (reg.getNivelRevelado() == null) {
+                reg.setNivelRevelado(0);
+                repositorio.save(reg);
+            }
+        });
+    }
+
+    public boolean registrarRevelacion(Long consultaId, Integer nivel, String username) {
+        if (consultaId == null || nivel == null) return false;
+        return repositorio.findById(consultaId).map(reg -> {
+            if (!reg.getUsername().equals(username)) return false;
+            int actual = reg.getNivelRevelado() != null ? reg.getNivelRevelado() : 0;
+            if (nivel > actual) {
+                reg.setNivelRevelado(nivel);
+                repositorio.save(reg);
+            }
+            return true;
+        }).orElse(false);
+    }
+
+    public List<TendenciaTema> tendenciasPorTema(String username, String asignaturaId) {
+        String asig = (asignaturaId == null || asignaturaId.isBlank()) ? "General" : asignaturaId;
+        List<RegistroConsulta> turnos = repositorio.buscarTurnosDeCalado(
+                username, asig, PageRequest.of(0, MAX_TURNOS_ANALIZADOS));
+
+        Map<String, List<Integer>> porTema = new LinkedHashMap<>();
+        for (RegistroConsulta r : turnos) {
+            String tema = (r.getTema() == null || r.getTema().isBlank()) ? "General" : r.getTema();
+            porTema.computeIfAbsent(tema, k -> new ArrayList<>()).add(r.getNivelRevelado());
+        }
+
+        List<TendenciaTema> salida = new ArrayList<>();
+        for (Map.Entry<String, List<Integer>> entrada : porTema.entrySet()) {
+            TendenciaTema tendencia = calcularTendencia(entrada.getKey(), entrada.getValue());
+            if (tendencia != null) salida.add(tendencia);
+        }
+        return salida;
+    }
+
+    private TendenciaTema calcularTendencia(String tema, List<Integer> nivelesRecientesPrimero) {
+        int total = nivelesRecientesPrimero.size();
+        if (total < MIN_MUESTRAS_POR_BLOQUE * 2) return null;
+
+        int corteReciente = Math.min(VENTANA_TENDENCIA, total - MIN_MUESTRAS_POR_BLOQUE);
+        List<Integer> recientes = nivelesRecientesPrimero.subList(0, corteReciente);
+        int finPrevio = Math.min(total, corteReciente + VENTANA_TENDENCIA);
+        List<Integer> previos = nivelesRecientesPrimero.subList(corteReciente, finPrevio);
+
+        if (recientes.size() < MIN_MUESTRAS_POR_BLOQUE || previos.size() < MIN_MUESTRAS_POR_BLOQUE) return null;
+
+        double mediaReciente = media(recientes);
+        double mediaPrevia = media(previos);
+        double diferencia = mediaReciente - mediaPrevia;
+
+        int direccion = 0;
+        if (diferencia <= -UMBRAL_TENDENCIA) direccion = 1;
+        else if (diferencia >= UMBRAL_TENDENCIA) direccion = -1;
+
+        return new TendenciaTema(tema, direccion,
+                redondear(mediaReciente), redondear(mediaPrevia), recientes.size() + previos.size());
+    }
+
+    private double media(List<Integer> valores) {
+        int suma = 0;
+        for (Integer v : valores) suma += (v != null ? v : 0);
+        return (double) suma / valores.size();
+    }
+
+    private double redondear(double valor) {
+        return Math.round(valor * 10.0) / 10.0;
     }
 
     private Long guardar(RegistroConsulta registro) {

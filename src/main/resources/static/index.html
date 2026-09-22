@@ -57,17 +57,17 @@
     </div>
 
     <div class="acciones-sidebar">
-        <button class="accion-sidebar destacada" onclick="abrirModalReto()">🚀 Modo Reto / Ejercicio</button>
-        <button class="accion-sidebar" onclick="generarApuntesRepaso()">📥 Apuntes de repaso IA</button>
-        <button class="accion-sidebar" onclick="abrirModalValidador()">📝 Validador de apuntes</button>
+        <button class="accion-sidebar destacada" onclick="abrirModalReto()">Modo Reto / Ejercicio</button>
+        <button class="accion-sidebar" onclick="generarApuntesRepaso()">Apuntes de repaso IA</button>
+        <button class="accion-sidebar" onclick="abrirModalValidador()">Validador de apuntes</button>
     </div>
 
     <div class="section-title">Temario de la asignatura</div>
     <ul class="topic-list" id="lista-temas">
-        <li class="topic-item general-topic active" data-file="General" onclick="seleccionarTema(this)">🌐 Todo el temario</li>
+        <li class="topic-item general-topic active" data-file="General" data-nombre="Todo el temario" onclick="seleccionarTema(this)">Todo el temario</li>
     </ul>
 
-    <div class="section-title">🎒 Mis conocimientos</div>
+    <div class="section-title">Mis conocimientos</div>
     <ul class="topic-list" id="lista-mis-conocimientos">
         <li class="texto-vacio-mini">Aún no has guardado apuntes propios.</li>
     </ul>
@@ -514,6 +514,8 @@
                     <li><strong>🚀 Modo Reto:</strong> resuelve ejercicios paso a paso (microhitos) con editor de código integrado. Puedes generar uno con IA, subir el tuyo (texto, <strong>PDF o Markdown</strong>) o elegir uno propuesto por tu profesor.</li>
                     <li><strong>📥 Apuntes de Repaso IA:</strong> genera al instante un resumen estructurado del tema.</li>
                     <li><strong>📝 Validador de Apuntes:</strong> sube tus apuntes propios y comprueba si están completos y correctos frente al temario.</li>
+                    <li><strong>🔎 Necesito más pista:</strong> en las preguntas de fondo el tutor te da primero lo mínimo para que pienses tú. Si te quedas atascado, destapa más ayuda con ese botón: tú decides cuánta necesitas.</li>
+                    <li><strong>▲ Flecha junto al tema:</strong> aparece cuando vas necesitando menos pista que antes en ese tema. Es solo para ti; no es una nota.</li>
                     <li><strong>🔥 Racha diaria:</strong> entra cada día para mantener tu racha y no perder el ritmo de estudio.</li>
                     <li><strong>🎨 Tema visual:</strong> cambia los colores de la aplicación desde el menú ⋮ de arriba a la derecha.</li>
                 </ul>

@@ -20,8 +20,17 @@ public class PerfilAprendizajeServicio {
     public PerfilAlumno obtenerOCrear(String username, String asignaturaId) {
         String asig = normalizarAsignatura(asignaturaId);
         return repositorio.findByUsernameAndAsignaturaId(username, asig)
-                .map(r -> new PerfilAlumno(r.getContadorTeorico(), r.getContadorPractico(),
-                        r.getIteracionChat(), r.isEsperandoRecalibracion(), r.getUltimaIteracionRecalibracion(), r.getRachaNoUtil(), r.getContadorUtil(), r.getContadorNoUtil()))
+                .map(r -> {
+                    PerfilAlumno perfil = new PerfilAlumno(r.getContadorTeorico(), r.getContadorPractico(),
+                            r.getIteracionChat(), r.isEsperandoRecalibracion(), r.getUltimaIteracionRecalibracion(),
+                            r.getRachaNoUtil(), r.getContadorUtil(), r.getContadorNoUtil());
+                    perfil.setNivelAndamiaje(r.getNivelAndamiaje() != null
+                            ? r.getNivelAndamiaje() : PerfilAlumno.NIVEL_ANDAMIAJE_INICIAL);
+                    perfil.setTurnosAtascado(r.getTurnosAtascado() != null ? r.getTurnosAtascado() : 0);
+                    perfil.setTurnosSueltos(r.getTurnosSueltos() != null ? r.getTurnosSueltos() : 0);
+                    perfil.setUltimaConsultaCalado(r.getUltimaConsultaCalado());
+                    return perfil;
+                })
                 .orElseGet(PerfilAlumno::new);
     }
 
@@ -79,6 +88,10 @@ public class PerfilAprendizajeServicio {
         reg.setRachaNoUtil(perfil.rachaNoUtil());
         reg.setContadorUtil(perfil.contadorUtil());
         reg.setContadorNoUtil(perfil.contadorNoUtil());
+        reg.setNivelAndamiaje(perfil.nivelAndamiaje());
+        reg.setTurnosAtascado(perfil.turnosAtascado());
+        reg.setTurnosSueltos(perfil.turnosSueltos());
+        reg.setUltimaConsultaCalado(perfil.ultimaConsultaCalado());
         repositorio.save(reg);
     }
 

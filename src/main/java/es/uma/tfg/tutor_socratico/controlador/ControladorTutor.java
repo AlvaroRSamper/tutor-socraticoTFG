@@ -5,7 +5,9 @@ import es.uma.tfg.tutor_socratico.dto.Mensaje;
 import es.uma.tfg.tutor_socratico.dto.PeticionChat;
 import es.uma.tfg.tutor_socratico.dto.PeticionEjercicio;
 import es.uma.tfg.tutor_socratico.dto.PeticionPreferencia;
+import es.uma.tfg.tutor_socratico.dto.PeticionRevelacion;
 import es.uma.tfg.tutor_socratico.dto.PeticionValoracion;
+import es.uma.tfg.tutor_socratico.dto.TendenciaTema;
 import es.uma.tfg.tutor_socratico.dto.RespuestaApuntes;
 import es.uma.tfg.tutor_socratico.dto.RespuestaChat;
 import es.uma.tfg.tutor_socratico.dto.RespuestaEjercicio;
@@ -113,6 +115,19 @@ public class ControladorTutor {
         boolean ok = servicioRegistroConsultas.registrarValoracion(
                 peticion.consultaId(), peticion.valoracion(), peticion.comentario());
         return new RespuestaExito(ok);
+    }
+
+    @PostMapping("/revelacion")
+    public RespuestaExito registrarRevelacion(@Valid @RequestBody PeticionRevelacion peticion,
+                                              Authentication authentication) {
+        boolean ok = servicioRegistroConsultas.registrarRevelacion(
+                peticion.consultaId(), peticion.nivel(), authentication.getName());
+        return new RespuestaExito(ok);
+    }
+
+    @GetMapping("/tendencias")
+    public List<TendenciaTema> obtenerTendencias(Authentication authentication, HttpSession session) {
+        return servicioRegistroConsultas.tendenciasPorTema(authentication.getName(), asignaturaDe(session));
     }
 
     @PostMapping("/repaso")

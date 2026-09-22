@@ -35,8 +35,9 @@
                         const li = document.createElement('li');
                         li.className = 'topic-item';
                         li.setAttribute('data-file', nom);
+                        li.setAttribute('data-nombre', (indice + 1) + ". " + nom.replace(/\.[^/.]+$/, ""));
                         li.onclick = () => seleccionarTema(li);
-                        li.innerText = (indice + 1) + ". " + nom.replace(/\.[^/.]+$/, "");
+                        li.innerText = li.getAttribute('data-nombre');
                         listaTemas.appendChild(li);
                     }
                 });
@@ -47,7 +48,7 @@
             selectModal.innerHTML = '';
             document.querySelectorAll('.topic-item').forEach(li => {
                 const file = li.getAttribute('data-file');
-                const nombre = li.innerText;
+                const nombre = li.getAttribute('data-nombre') || li.innerText;
                 const option = document.createElement('option');
                 option.value = file;
                 option.text = nombre;
@@ -55,6 +56,38 @@
             });
         }
         if (typeof cargarMisConocimientos === 'function') cargarMisConocimientos();
+        cargarTendencias();
+    }
+
+    async function cargarTendencias() {
+        const listaTemas = document.getElementById('lista-temas');
+        if (!listaTemas) return;
+        try {
+            const res = await fetch('/api/tutor/tendencias');
+            if (!res.ok) return;
+            const datos = await res.json();
+            const porTema = {};
+            datos.forEach(t => { porTema[t.tema] = t; });
+
+            listaTemas.querySelectorAll('.topic-item').forEach(li => {
+                const previa = li.querySelector('.tendencia-tema');
+                if (previa) previa.remove();
+
+                const t = porTema[li.getAttribute('data-file')];
+                if (!t || t.direccion === 0) return;
+
+                const sube = t.direccion === 1;
+                const marca = document.createElement('span');
+                marca.className = 'tendencia-tema ' + (sube ? 'tendencia-sube' : 'tendencia-baja');
+                marca.innerText = sube ? '▲' : '▼';
+                marca.title = sube
+                    ? 'Vas necesitando menos pista en este tema (' + t.mediaPrevia + ' → ' + t.mediaReciente + ' de media).'
+                    : 'Últimamente necesitas más pista en este tema (' + t.mediaPrevia + ' → ' + t.mediaReciente + ' de media).';
+                li.appendChild(marca);
+            });
+        } catch (e) {
+            console.error("Error cargando tendencias", e);
+        }
     }
 
     async function hacerLogin() {
@@ -165,7 +198,8 @@
         elemento.classList.add('active');
         
         temaActual = elemento.getAttribute('data-file');
-        const nombreVisible = elemento.innerText.split('. ').pop().trim();
+        const etiqueta = elemento.getAttribute('data-nombre') || elemento.innerText;
+        const nombreVisible = etiqueta.split('. ').pop().trim();
         
         // No actualizamos titulo-chat para que mantenga el título de la asignatura
         agregarAvisoContexto("Contexto RAG cambiado a: " + nombreVisible);
@@ -241,18 +275,21 @@
                 return;
             }
 
-            historial.push({ role: "assistant", content: json.mensaje });
+            const capas = partirEnCapas(json.mensaje);
+            historial.push({ role: "assistant", content: capas[0] });
+            const indiceHistorial = historial.length - 1;
             guardarHistorial();
 
             const burbujaBot = document.getElementById(idUnico);
             if (burbujaBot) {
                 marked.setOptions({ breaks: true });
-                let mensajeLimpio = limpiarMensaje(json.mensaje);
 
                 if (json.mostrarOpciones) {
-                    renderizarOpcionesSideBySide(burbujaBot, mensajeLimpio);
+                    renderizarOpcionesSideBySide(burbujaBot, limpiarMensaje(json.mensaje));
+                } else if (capas.length > 1) {
+                    renderizarPorCapas(burbujaBot, capas, json.consultaId, indiceHistorial);
                 } else {
-                    burbujaBot.innerHTML = marked.parse(mensajeLimpio);
+                    burbujaBot.innerHTML = marked.parse(capas[0]);
                 }
                 renderizarValoracionBotones(burbujaBot, json.consultaId);
             }
@@ -274,6 +311,63 @@
             return texto.substring(0, stateIdx).trim();
         }
         return texto;
+    }
+
+    function partirEnCapas(texto) {
+        const limpio = limpiarMensaje(texto);
+        const partes = limpio.split(/^[ \t]*-{3}\s*CAPA\s*-{3}[ \t]*$/m)
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+        return partes.length > 0 ? partes : [limpio];
+    }
+
+    function renderizarPorCapas(burbujaBot, capas, consultaId, indiceHistorial) {
+        burbujaBot.innerHTML = "";
+
+        const contenido = document.createElement('div');
+        contenido.className = 'capas-contenido';
+        contenido.innerHTML = marked.parse(capas[0]);
+        burbujaBot.appendChild(contenido);
+
+        const boton = document.createElement('button');
+        boton.className = 'btn-mas-pista';
+        boton.innerText = '🔎 Necesito más pista';
+        burbujaBot.appendChild(boton);
+
+        let reveladas = 1;
+        boton.addEventListener('click', async () => {
+            if (reveladas >= capas.length) return;
+
+            const nueva = document.createElement('div');
+            nueva.className = 'capa-revelada';
+            nueva.innerHTML = marked.parse(capas[reveladas]);
+            contenido.appendChild(nueva);
+
+            if (historial[indiceHistorial]) {
+                historial[indiceHistorial].content += "\n\n" + capas[reveladas];
+                guardarHistorial();
+            }
+
+            reveladas++;
+            if (reveladas >= capas.length) boton.remove();
+            hacerScrollAbajo();
+
+            await registrarRevelacion(consultaId, reveladas - 1);
+        });
+    }
+
+    async function registrarRevelacion(consultaId, nivel) {
+        if (!consultaId || consultaId === 0) return;
+        try {
+            await fetch('/api/tutor/revelacion', {
+                method: 'POST',
+                headers: cabecerasConCsrf({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ consultaId: consultaId, nivel: nivel })
+            });
+            cargarTendencias();
+        } catch (error) {
+            console.error("Error registrando revelación", error);
+        }
     }
 
     function renderizarOpcionesSideBySide(burbujaBot, mensaje) {
@@ -814,12 +908,13 @@ async function cargarMisConocimientos() {
             const li = document.createElement('li');
             li.className = 'topic-item';
             li.setAttribute('data-file', a.tema);
+            li.setAttribute('data-nombre', a.tema);
             li.onclick = () => seleccionarTema(li);
             li.oncontextmenu = (e) => {
                 e.preventDefault();
                 borrarApunteAlumno(a.id, a.tema);
             };
-            li.innerText = '🎒 ' + a.tema;
+            li.innerText = a.tema;
             li.title = "Clic derecho para eliminar";
             lista.appendChild(li);
         });

@@ -68,4 +68,12 @@ public class PerfilAlumnoRegistro {
     private boolean consentimientoDatos;
 
     private java.time.LocalDateTime fechaConsentimiento;
+
+    private Integer nivelAndamiaje;
+
+    private Integer turnosAtascado;
+
+    private Integer turnosSueltos;
+
+    private Long ultimaConsultaCalado;
 }

@@ -58,6 +58,28 @@ public class ServicioTutor {
     private static final String MARCA_INI = "\n<<<DATOS>>>\n";
     private static final String MARCA_FIN = "\n<<<FIN_DATOS>>>\n";
 
+    public static final String MARCADOR_CAPA = "---CAPA---";
+
+    private static final String[] NIVELES_ANDAMIAJE = {
+            "no expliques todavía; devuélvele la pregunta y dale como mucho una pista mínima para que empiece a razonar",
+            "puedes explicar el concepto o la teoría (el qué y el porqué), pero no cómo se implementa",
+            "puedes explicar el concepto y además darle una pista estratégica sobre el siguiente paso, sin escribir código",
+            "puedes llegar a incluir pseudocódigo o un fragmento mínimo, nunca la solución completa"
+    };
+
+    public static final String DIRECTIVA_PROPORCIONALIDAD =
+            "Ajusta la extensión de tu respuesta al calado de la pregunta y no hagas nunca más de una pregunta por turno.\n" +
+            "- Si la pregunta es PUNTUAL (sintaxis, un término, un sí o no, una comparación corta o un seguimiento " +
+            "breve): responde en 3-5 líneas, sin encabezados ni listas largas, y termina con una sola pregunta. " +
+            "En este caso NO uses capas.\n" +
+            "- Si la pregunta es CONCEPTUAL, de diseño o de fundamento: responde con revelación progresiva, en tres " +
+            "capas separadas por una línea que contenga exactamente «" + MARCADOR_CAPA + "» y nada más:\n" +
+            "  Capa 1: la pregunta que le devuelves y la pista mínima para que empiece a pensar (2-4 líneas).\n" +
+            "  Capa 2: la explicación conceptual desarrollada.\n" +
+            "  Capa 3: el ejemplo concreto, el esquema o el esqueleto de partida, nunca la solución completa.\n" +
+            "El alumno solo verá la capa 1 y decidirá si destapa las siguientes, así que cada capa debe sostenerse " +
+            "por sí sola y no anunciar lo que viene después. No menciones nunca las capas ni el marcador.";
+
     private final ChatLanguageModel chatLanguageModel;
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
@@ -97,9 +119,14 @@ public class ServicioTutor {
 
             PerfilAlumno perfil = perfilAprendizajeServicio.obtenerOCrear(username, asignaturaId);
             if (perfil.esperandoRecalibracion()) {
-                
+
                 perfilAprendizajeServicio.aplicarHeuristicaRecalibracion(perfil, ultimaPregunta);
                 perfil.marcarEsperandoRecalibracion(false);
+            }
+            Long caladoPendiente = perfil.ultimaConsultaCalado();
+            if (caladoPendiente != null) {
+                perfil.registrarTurnoDeCalado(servicioRegistroConsultas.necesitoMasAyuda(caladoPendiente));
+                perfil.setUltimaConsultaCalado(null);
             }
             perfil.incrementarIteracion();
             int iteracion = perfil.iteracionChat();
@@ -158,9 +185,9 @@ public class ServicioTutor {
                         "céntrate en un ejemplo o ejercicio guiado similar).";
             }
 
-            
-            
-            perfilAprendizajeServicio.persistir(username, asignaturaId, perfil);
+            String instruccionAndamiaje = "Techo de ayuda permitido ahora con este alumno (nivel " +
+                    perfil.nivelAndamiaje() + " de 3): " + NIVELES_ANDAMIAJE[perfil.nivelAndamiaje()] + ". " +
+                    "Puedes quedarte por debajo de ese techo si le ves suelto, pero no lo superes.";
 
             String textoSistema = obtenerSystemPrompt(asignaturaId) + "\n\n" +
                     DIRECTIVA_ANTI_INYECCION + "\n\n" +
@@ -170,6 +197,7 @@ public class ServicioTutor {
                     "  \"iteracion\": " + iteracion + ",\n" +
                     "  \"teorico\": " + perfil.porcentajeTeorico() + ",\n" +
                     "  \"practico\": " + perfil.porcentajePractico() + ",\n" +
+                    "  \"nivelAndamiaje\": " + perfil.nivelAndamiaje() + ",\n" +
                     "  \"temaSeleccionado\": \"" + temaNombre + "\"\n" +
                     "}\n\n" +
                     (temaConcreto
@@ -180,7 +208,10 @@ public class ServicioTutor {
                     "Utiliza el siguiente contexto extraído de los apuntes oficiales para guiarle. " +
                     "Si es oportuno, menciónale sutilmente el nombre del archivo fuente del que debe repasar la teoría.\n\n" +
                     "Contexto de los apuntes:" + MARCA_INI + contexto + MARCA_FIN + "\n" +
-                    instruccionFase + "\n\n" + DIRECTIVA_DERIVACION_DOCENTE;
+                    instruccionFase + "\n\n" +
+                    instruccionAndamiaje + "\n\n" +
+                    (mostrarOpciones ? "" : DIRECTIVA_PROPORCIONALIDAD + "\n\n") +
+                    DIRECTIVA_DERIVACION_DOCENTE;
 
             List<ChatMessage> mensajesChat = new ArrayList<>();
             mensajesChat.add(SystemMessage.from(textoSistema));
@@ -203,6 +234,14 @@ public class ServicioTutor {
 
             Long consultaId = servicioRegistroConsultas.registrarChat(username, asignaturaId, peticion.tema(), ultimaPregunta,
                     textoRespuesta, fase, iteracion);
+
+            boolean respuestaPorCapas = !mostrarOpciones && textoRespuesta != null
+                    && textoRespuesta.contains(MARCADOR_CAPA);
+            if (respuestaPorCapas && consultaId != null) {
+                servicioRegistroConsultas.marcarTurnoDeCalado(consultaId);
+                perfil.setUltimaConsultaCalado(consultaId);
+            }
+            perfilAprendizajeServicio.persistir(username, asignaturaId, perfil);
 
             return RespuestaChat.de(
                     textoRespuesta != null ? textoRespuesta : "⚠️ Error en la respuesta.",
