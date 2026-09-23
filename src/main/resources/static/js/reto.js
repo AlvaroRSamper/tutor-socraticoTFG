@@ -281,6 +281,7 @@ function retoPanelDetalle(e) {
 
     let boton;
     let pista;
+    let reiniciar = '';
     if (estado === 'completado') {
         boton = '<button type="button" class="reto-btn-detalle secundario">Repasar el reto</button>';
         pista = 'Tu autonomía ya está guardada';
@@ -288,6 +289,7 @@ function retoPanelDetalle(e) {
         const siguiente = Math.min(e.hitosCompletados + 1, e.nMicrohitos);
         boton = '<button type="button" class="reto-btn-detalle">Continuar · hito ' + siguiente + ' de ' + e.nMicrohitos + '</button>';
         pista = 'Retomas donde lo dejaste';
+        reiniciar = '<button type="button" class="reto-btn-reiniciar">Reiniciar desde cero</button>';
     } else {
         boton = '<button type="button" class="reto-btn-detalle">Empezar reto</button>';
         pista = 'Se abrirá el chat con el enunciado completo';
@@ -311,15 +313,26 @@ function retoPanelDetalle(e) {
         '<div class="reto-detalle-bajo">' +
         boton +
         '<span class="reto-detalle-pista">' + pista + '</span>' +
+        reiniciar +
         '</div>';
 
     caja.querySelector('.reto-btn-detalle').onclick = () => retoTableroAbrir(e);
+    const btnReiniciar = caja.querySelector('.reto-btn-reiniciar');
+    if (btnReiniciar) btnReiniciar.onclick = () => retoReiniciar(e);
     return caja;
 }
 
-function retoTableroAbrir(propuesto) {
+function retoTableroAbrir(propuesto, reiniciar) {
     document.getElementById('modal-reto').style.display = 'flex';
-    retoIniciarDesdeEjercicio(propuesto.ejercicioId, true, false);
+    retoIniciarDesdeEjercicio(propuesto.ejercicioId, true, !!reiniciar);
+}
+
+function retoReiniciar(propuesto) {
+    const aviso = '¿Reiniciar "' + propuesto.titulo + '" desde cero?\n\n' +
+        'Llevas ' + propuesto.hitosCompletados + ' de ' + propuesto.nMicrohitos + ' microhitos. ' +
+        'Empezarás de nuevo y tu intento anterior quedará como abandonado.';
+    if (!confirm(aviso)) return;
+    retoTableroAbrir(propuesto, true);
 }
 
 /* ---------------------- Overlay de carga / arranque ---------------------- */
@@ -640,7 +653,7 @@ function salirReto() {
     clearInterval(retoEstado.cronometro);
     retoSincronizarTiempo(true);
     document.getElementById('pantalla-reto').classList.remove('activo');
-    if (modoRetoExclusivoActivo()) retoCargarTablero();
+    retoCargarTablero();
 }
 
 /* ---------------------- Chat del reto ---------------------- */
