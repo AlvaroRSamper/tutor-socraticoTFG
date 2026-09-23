@@ -85,7 +85,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 Esto compila el código y pasa los tests para generar el archivo .jar en la carpeta target.
 
 ### Despliegue en producción para Linux
-En producción se usa el perfil prod que cambia bastantes cosas respecto a local. Usa PostgreSQL con pgvector en vez de H2 y usa migraciones con Flyway. También usa cookies seguras y acceso del alumnado y el profesorado por LTI desde Moodle.
+En producción se usa el perfil prod que cambia bastantes cosas respecto a local. Usa PostgreSQL con pgvector en vez de H2 y usa migraciones con Flyway. También endurece las cabeceras y las cookies de sesión y deja preparado el acceso del alumnado y el profesorado por LTI desde Moodle.
 
 Los pasos siguientes están probados en Ubuntu 24.04 con una asignatura de 60 alumnos y 2 profesores. La app se instala en /opt/tutor-socratico y se ejecuta con un usuario del sistema propio llamado tutor.
 
@@ -163,7 +163,7 @@ El correo solo se usa para el informe semanal al profesor. Si no hay cuenta de c
 
 Para la integración con Moodle LTI hay que añadir además los export de LTI_ISSUER LTI_CLIENT_ID LTI_JWKS_URI y LTI_AUTH_LOGIN_URL con los datos que da Moodle.
 
-Al ir embebida en un iframe de Moodle hace falta también autorizar al Campus como padre de la página, porque por defecto solo se permite a sí misma y el navegador bloquea el iframe. Se hace con export TUTOR_SECURITY_FRAME_ANCESTORS="'self' https://el-dominio-del-campus" y no requiere tocar código.
+Al ir embebida en un iframe de Moodle hace falta también autorizar al Campus como padre de la página, porque por defecto solo se permite a sí misma y el navegador bloquea el iframe. Se hace con export TUTOR_SECURITY_FRAME_ANCESTORS="'self' https://el-dominio-del-campus" y no requiere tocar código. El iframe necesita además que el despliegue esté en HTTPS, así que esto no surte efecto mientras se sirva por HTTP (ver el paso 7 bis).
 
 Para una prueba rápida se puede lanzar el script a mano con sudo -u tutor /opt/tutor-socratico/arrancar.sh, pero la app se para al cerrar la terminal. Para dejarla en marcha se usa el servicio del paso siguiente.
 
@@ -204,24 +204,15 @@ La app ha arrancado bien cuando en el log aparecen estas tres líneas. La primer
 
 La app escucha solo en 127.0.0.1 para que no se pueda entrar sin pasar por el proxy. Consume en torno a 1 GB de memoria así que el servidor debería tener al menos 2 GB.
 
-#### 7. Proxy inverso con HTTPS
-La app va detrás de un proxy inverso que termina el TLS. En producción las cookies son seguras y se necesita HTTPS de verdad sobre todo porque va embebida en un iframe de Moodle. Sin HTTPS el login no funciona. El perfil prod ya está preparado para leer las cabeceras del proxy.
+#### 7. Proxy inverso
+La app va detrás de un proxy inverso porque escucha solo en 127.0.0.1. De momento el despliegue es en HTTP: el servidor es una IP pública sin dominio y no hay certificado, así que el perfil prod trae las cookies de sesión preparadas para HTTP y no hay que exportar nada. Mientras sea HTTP la app no puede ir embebida en el iframe de Moodle, porque el Campus va en HTTPS y el navegador bloquea el contenido mixto. El acceso es directo por la IP y el login manual funciona con normalidad.
 
-Se crea el fichero /etc/nginx/sites-available/tutor-socratico con el certificado del servidor.
+Se crea el fichero /etc/nginx/sites-available/tutor-socratico.
 
 ```nginx
 server {
     listen 80;
-    server_name tutor.ejemplo.uma.es;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name tutor.ejemplo.uma.es;
-
-    ssl_certificate     /etc/ssl/certs/tutor.crt;
-    ssl_certificate_key /etc/ssl/private/tutor.key;
+    server_name _;
 
     client_max_body_size 100M;
 
@@ -237,7 +228,7 @@ server {
 }
 ```
 
-La línea client_max_body_size es necesaria porque nginx limita las subidas a 1 MB por defecto y el profesor no podría subir los PDF de apuntes. El proxy_read_timeout da margen a las respuestas del modelo que tardan más.
+El server_name con guion bajo vale para cualquier nombre, que es lo que hace falta al entrar por la IP. La línea client_max_body_size es necesaria porque nginx limita las subidas a 1 MB por defecto y el profesor no podría subir los PDF de apuntes. El proxy_read_timeout da margen a las respuestas del modelo que tardan más.
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/tutor-socratico /etc/nginx/sites-enabled/
@@ -246,8 +237,25 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+En HTTP las contraseñas y las conversaciones viajan en claro, así que cualquiera en la misma red puede leerlas o robar la sesión. Es una limitación asumida mientras dure la fase de pruebas y conviene tratar las cuentas repartidas como provisionales.
+
+#### 7 bis. Pasar a HTTPS cuando haya certificado
+Hace falta un nombre de dominio, que se puede conseguir gratis derivado de la IP con sslip.io (una IP 150.214.10.25 es 150-214-10-25.sslip.io) o con un subdominio de DuckDNS. Con ese nombre en el server_name, certbot pide el certificado a Let's Encrypt y reescribe el nginx él solo.
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d 150-214-10-25.sslip.io
+```
+
+Después hay que endurecer las cookies añadiendo estas dos líneas a arrancar.sh y reiniciando el servicio. Sin ellas la sesión no viaja dentro del iframe de Moodle.
+
+```bash
+export TUTOR_COOKIE_SAME_SITE=none
+export TUTOR_COOKIE_SECURE=true
+```
+
 #### 8. Comprobar y repartir
-Entra con una cuenta de profesor en https://tu-servidor/profesor.html, configura la asignatura y sube los apuntes en PDF. Después entra con una cuenta de alumno en https://tu-servidor y haz una pregunta al tutor.
+Entra con una cuenta de profesor en http://LA-IP-DEL-SERVIDOR/profesor.html, configura la asignatura y sube los apuntes en PDF. Después entra con una cuenta de alumno en http://LA-IP-DEL-SERVIDOR y haz una pregunta al tutor.
 
 Cuando todo funcione entrega a cada alumno su fila de credenciales.csv y borra ese fichero del servidor.
 
