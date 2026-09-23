@@ -5,6 +5,7 @@ import es.uma.tfg.tutor_socratico.dto.PerfilDocente;
 import es.uma.tfg.tutor_socratico.dto.RespuestaConfiguracion;
 import es.uma.tfg.tutor_socratico.dto.RespuestaExito;
 import es.uma.tfg.tutor_socratico.dto.RespuestaInfoAsignatura;
+import es.uma.tfg.tutor_socratico.dto.RespuestaModoReto;
 import es.uma.tfg.tutor_socratico.dto.RespuestaRadar;
 import es.uma.tfg.tutor_socratico.dto.RespuestaResumen;
 import es.uma.tfg.tutor_socratico.dto.RespuestaSensibilidad;
@@ -17,6 +18,7 @@ import es.uma.tfg.tutor_socratico.persistencia.RegistroConsultaRepositorio;
 import es.uma.tfg.tutor_socratico.servicio.ServicioEstancamiento;
 import es.uma.tfg.tutor_socratico.servicio.ServicioInformeSemanal;
 import es.uma.tfg.tutor_socratico.servicio.ServicioIngesta;
+import es.uma.tfg.tutor_socratico.servicio.ServicioModoReto;
 import es.uma.tfg.tutor_socratico.servicio.ServicioTutor;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +56,7 @@ public class ControladorProfesor {
     private final ServicioTutor servicioTutor;
     private final ServicioEstancamiento servicioEstancamiento;
     private final ServicioInformeSemanal servicioInformeSemanal;
+    private final ServicioModoReto servicioModoReto;
 
     public ControladorProfesor(RegistroConsultaRepositorio repositorio,
                                PerfilAlumnoRepositorio perfilRepositorio,
@@ -61,7 +64,8 @@ public class ControladorProfesor {
                                AsignaturaRepositorio asignaturaRepositorio,
                                ServicioTutor servicioTutor,
                                ServicioEstancamiento servicioEstancamiento,
-                               ServicioInformeSemanal servicioInformeSemanal) {
+                               ServicioInformeSemanal servicioInformeSemanal,
+                               ServicioModoReto servicioModoReto) {
         this.repositorio = repositorio;
         this.perfilRepositorio = perfilRepositorio;
         this.servicioIngesta = servicioIngesta;
@@ -69,6 +73,7 @@ public class ControladorProfesor {
         this.servicioTutor = servicioTutor;
         this.servicioEstancamiento = servicioEstancamiento;
         this.servicioInformeSemanal = servicioInformeSemanal;
+        this.servicioModoReto = servicioModoReto;
     }
 
     private String asignaturaDe(HttpSession session) {
@@ -147,6 +152,16 @@ public class ControladorProfesor {
     }
 
     
+
+    @GetMapping("/modo-reto")
+    public RespuestaModoReto estadoModoReto(HttpSession session) {
+        return new RespuestaModoReto(servicioModoReto.activo(asignaturaDe(session)));
+    }
+
+    @PostMapping("/modo-reto")
+    public RespuestaModoReto guardarModoReto(@RequestParam boolean activo, HttpSession session) {
+        return new RespuestaModoReto(servicioModoReto.guardar(asignaturaDe(session), activo));
+    }
 
     @PostMapping("/estancamiento/sensibilidad")
     public RespuestaSensibilidad guardarSensibilidad(@RequestParam int valor,

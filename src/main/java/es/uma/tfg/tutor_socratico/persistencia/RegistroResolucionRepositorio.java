@@ -14,4 +14,6 @@ public interface RegistroResolucionRepositorio extends JpaRepository<RegistroRes
     boolean existsByUsernameAndEjercicioIdAndEstado(String username, Long ejercicioId, RegistroResolucion.Estado estado);
 
     List<RegistroResolucion> findByAsignaturaId(String asignaturaId);
+
+    List<RegistroResolucion> findByEjercicioId(Long ejercicioId);
 }

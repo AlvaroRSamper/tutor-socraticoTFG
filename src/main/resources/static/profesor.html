@@ -167,6 +167,20 @@
 
         <!-- RETOS PROPUESTOS -->
         <section id="seccion-retos" class="seccion-profesor" role="tabpanel">
+            <div class="bloque-panel bloque-modo-reto" id="bloque-modo-reto">
+                <div class="bloque-cabecera">
+                    <div>
+                        <div class="section-title">Modo reto exclusivo</div>
+                        <p>Mientras está activo, tus alumnos solo ven los retos que publiques aquí. Se ocultan el chat libre del temario, los apuntes de repaso, el validador de apuntes, los tests de teoría y la creación de ejercicios propios. Puedes desactivarlo cuando quieras.</p>
+                    </div>
+                    <label class="interruptor" title="Activar o desactivar el modo reto exclusivo">
+                        <input type="checkbox" id="check-modo-reto" onchange="guardarModoReto(this.checked)">
+                        <span class="interruptor-pista"></span>
+                    </label>
+                </div>
+                <p id="estado-modo-reto" class="estado-msg"></p>
+            </div>
+
             <div class="bloque-panel">
                 <div class="section-title">Publicar un ejercicio propuesto</div>
                 <p class="seccion-intro">Publica un reto con microhitos desglosados. Aparecerá al instante en la pestaña "Ejercicios Propuestos" de los alumnos.</p>
@@ -210,6 +224,7 @@
                     <button class="btn-ejercicio" onclick="cargarRadarDocente()">↻ Actualizar</button>
                 </div>
                 <div id="radar-docente"><p class="texto-vacio">Cargando…</p></div>
+                <p id="estado-radar" class="estado-msg"></p>
             </div>
         </section>
     </div>

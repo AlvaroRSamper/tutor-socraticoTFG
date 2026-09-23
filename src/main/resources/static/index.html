@@ -57,17 +57,20 @@
     </div>
 
     <div class="acciones-sidebar">
-        <button class="accion-sidebar destacada" onclick="abrirModalReto()">Modo Reto / Ejercicio</button>
+        <button class="accion-sidebar destacada" onclick="abrirPanelRetos()">Retos</button>
         <button class="accion-sidebar" onclick="generarApuntesRepaso()">Apuntes de repaso IA</button>
         <button class="accion-sidebar" onclick="abrirModalValidador()">Validador de apuntes</button>
     </div>
 
-    <div class="section-title">Temario de la asignatura</div>
+    <div class="section-title" id="titulo-retos-profesor">Mis retos</div>
+    <div class="lista-retos-sidebar" id="lista-retos-sidebar"></div>
+
+    <div class="section-title" id="titulo-temario">Temario de la asignatura</div>
     <ul class="topic-list" id="lista-temas">
         <li class="topic-item general-topic active" data-file="General" data-nombre="Todo el temario" onclick="seleccionarTema(this)">Todo el temario</li>
     </ul>
 
-    <div class="section-title">Mis conocimientos</div>
+    <div class="section-title" id="titulo-conocimientos">Mis conocimientos</div>
     <ul class="topic-list" id="lista-mis-conocimientos">
         <li class="texto-vacio-mini">Aún no has guardado apuntes propios.</li>
     </ul>
@@ -90,8 +93,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
     </button>
     <div id="header-dropdown" class="dropdown-menu" role="menu">
-        <button class="dropdown-item" onclick="reiniciarChat(); toggleHeaderMenu(event)">🔄 Reiniciar chat</button>
-        <div class="dropdown-sep"></div>
+        <button class="dropdown-item" id="item-reiniciar-chat" onclick="reiniciarChat(); toggleHeaderMenu(event)">🔄 Reiniciar chat</button>
+        <div class="dropdown-sep" id="sep-reiniciar-chat"></div>
         <div class="dropdown-etiqueta">Tema visual</div>
         <div data-selector-temas></div>
         <div class="dropdown-sep"></div>
@@ -125,6 +128,47 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div id="tablero-retos">
+            <header class="reto-tablero-cab">
+                <div class="reto-tablero-cab-txt">
+                    <span class="reto-tablero-chip"><span class="reto-tablero-punto"></span>Modo reto activado por tu profesor/a</span>
+                    <h1 class="reto-tablero-titulo">Elige un reto</h1>
+                </div>
+                <div class="reto-tablero-progreso">
+                    <span class="reto-tablero-progreso-txt" id="reto-tablero-progreso-txt"></span>
+                    <div class="reto-tablero-barra"><div class="reto-tablero-barra-relleno" id="reto-tablero-barra-relleno"></div></div>
+                </div>
+            </header>
+
+            <section class="reto-comofunciona" id="reto-comofunciona">
+                <div class="reto-comofunciona-celda">
+                    <span class="reto-comofunciona-num">01</span>
+                    <span>El reto se divide en <strong>microhitos</strong> pequeños</span>
+                </div>
+                <div class="reto-comofunciona-celda">
+                    <span class="reto-comofunciona-num">02</span>
+                    <span>Programa en tu IDE y pulsa <strong>Recargar porcentaje</strong></span>
+                </div>
+                <div class="reto-comofunciona-celda">
+                    <span class="reto-comofunciona-num">03</span>
+                    <span>Pregunta: te dará pistas, <strong>nunca la solución</strong></span>
+                </div>
+                <div class="reto-comofunciona-celda">
+                    <span class="reto-comofunciona-num">04</span>
+                    <span>Se mide tu <strong>autonomía</strong>, no la velocidad</span>
+                </div>
+                <button type="button" class="reto-comofunciona-cerrar" onclick="retoComoFunciona(false)" title="Ocultar">&times;</button>
+            </section>
+            <button type="button" class="reto-comofunciona-abrir" id="reto-comofunciona-abrir" onclick="retoComoFunciona(true)">¿Cómo funciona un reto?</button>
+
+            <div class="reto-filtros" id="reto-filtros" role="tablist"></div>
+
+            <div class="reto-tablero-cuerpo">
+                <div class="reto-rejilla" id="reto-rejilla"></div>
+                <aside class="reto-detalle" id="reto-detalle"></aside>
             </div>
         </div>
 
@@ -202,139 +246,89 @@
 
     <!-- ============ MODO RETO / MICROHITOS ============ -->
 
-    <!-- MODAL DE CONFIGURACIÓN INICIAL DEL RETO -->
+    <!-- PANEL DE RETOS (4 apartados) -->
+    <div id="panel-retos">
+        <div class="panel-reto-cab">
+            <h1 class="panel-reto-titulo">Retos</h1>
+            <div class="panel-reto-cab-dcha">
+                <span class="panel-reto-progreso" id="panel-reto-progreso"></span>
+                <button type="button" class="panel-reto-salir" onclick="cerrarPanelRetos()">Salir</button>
+            </div>
+        </div>
+
+        <div class="panel-reto-tabs" role="tablist" id="panel-reto-tabs"></div>
+
+        <div class="panel-reto-cuerpo">
+            <!-- 01 · EJERCICIOS PROPUESTOS -->
+            <section class="panel-reto-seccion" id="panel-reto-sec-01" role="tabpanel">
+                <div class="panel-reto-izq">
+                    <div class="panel-reto-rejilla" id="panel-reto-propuestos"></div>
+                </div>
+                <aside class="panel-reto-dcha" id="panel-reto-detalle-01"></aside>
+            </section>
+
+            <!-- 02 · SUBIR EJERCICIO -->
+            <section class="panel-reto-seccion" id="panel-reto-sec-02" role="tabpanel">
+                <div class="panel-reto-izq panel-reto-form">
+                    <div class="panel-reto-soltar" id="panel-reto-soltar">
+                        <span class="panel-reto-soltar-icono">&#8593;</span>
+                        <span class="panel-reto-soltar-txt">Arrastra aquí el enunciado o <span class="panel-reto-enlace">elige un archivo</span></span>
+                        <span class="panel-reto-soltar-sub">PDF, .txt, .md o código (.py, .java, .c) · máx. 10 MB</span>
+                    </div>
+                    <div class="panel-reto-archivo" id="panel-reto-archivo" style="display:none;"></div>
+                    <input type="file" id="panel-reto-input-archivo" accept=".pdf,.md,.markdown,.txt,.py,.java,.c,.cpp,.h" style="display:none;">
+
+                    <div class="panel-reto-separador"><span>o pega el texto</span></div>
+
+                    <textarea class="panel-reto-textarea" id="panel-reto-enunciado" placeholder="Pega aquí el enunciado del ejercicio…"></textarea>
+
+                    <div class="panel-reto-campo">
+                        <span class="panel-reto-etiqueta">¿De qué tema es? (opcional, ayuda al tutor)</span>
+                        <div class="panel-reto-chips" id="panel-reto-chips-subir"></div>
+                    </div>
+
+                    <button type="button" class="panel-reto-btn" id="panel-reto-btn-subir" onclick="panelRetoConvertir()" disabled>Convertir en reto</button>
+                </div>
+                <aside class="panel-reto-dcha" id="panel-reto-vista-02"></aside>
+            </section>
+
+            <!-- 03 · GENERAR CON IA -->
+            <section class="panel-reto-seccion" id="panel-reto-sec-03" role="tabpanel">
+                <div class="panel-reto-izq panel-reto-izq-centrada">
+                    <div class="panel-reto-tarjeta panel-reto-form">
+                        <h2 class="panel-reto-test-titulo">Generar con IA</h2>
+                        <p class="panel-reto-test-sub">Un ejercicio nuevo, diseñado a partir de los apuntes de tu asignatura.</p>
+                        <div class="panel-reto-campo">
+                            <span class="panel-reto-etiqueta">Tema</span>
+                            <div class="panel-reto-chips" id="panel-reto-chips-ia"></div>
+                        </div>
+                        <div class="panel-reto-campo">
+                            <span class="panel-reto-etiqueta">Dificultad</span>
+                            <div class="panel-reto-segmentado" id="panel-reto-dif-ia"></div>
+                        </div>
+                        <button type="button" class="panel-reto-btn" id="panel-reto-btn-ia" onclick="panelRetoGenerar()">Generar ejercicio</button>
+                    </div>
+                </div>
+                <aside class="panel-reto-dcha" id="panel-reto-vista-03"></aside>
+            </section>
+
+            <!-- 04 · TEST DE TEORÍA -->
+            <section class="panel-reto-seccion panel-reto-seccion-sola" id="panel-reto-sec-04" role="tabpanel">
+                <div class="panel-reto-test" id="panel-reto-test"></div>
+            </section>
+        </div>
+
+        <div class="panel-reto-pie">
+            <span class="panel-reto-pie-txt" id="reto-carpeta-estado">Sin vincular. Necesaria para "Recargar porcentaje".</span>
+            <button type="button" class="panel-reto-btn-sec panel-reto-btn-mini" onclick="retoVincularCarpeta()">Carpeta del IDE</button>
+        </div>
+    </div>
+
+
+    <!-- OVERLAY DE CARGA AL ARRANCAR UN RETO -->
     <div id="modal-reto" class="modal-overlay">
-        <div class="modal-content-card modal-ancho">
-            <div class="modal-header-bar">
-                <h2>🚀 Modo Reto / Ejercicio</h2>
-                <button class="btn-cerrar-modal" onclick="cerrarModalReto()">&times;</button>
-            </div>
-            <p class="modal-descripcion">Elige cómo quieres empezar tu reto. El tutor te guiará por microhitos sin darte la solución.</p>
-            <div class="reto-opciones">
-                <div class="reto-opcion" onclick="retoElegirSubir()">
-                    <span class="icono">📤</span>
-                    <span class="titulo">Subir ejercicio propio</span>
-                    <span class="sub">Pega tu enunciado y la IA lo divide en hitos</span>
-                </div>
-                <div class="reto-opcion" onclick="retoElegirCrear()">
-                    <span class="icono">✨</span>
-                    <span class="titulo">Crear con IA</span>
-                    <span class="sub">Elige tema y dificultad</span>
-                </div>
-                <div class="reto-opcion" onclick="retoElegirPropuestos()">
-                    <span class="icono">📋</span>
-                    <span class="titulo">Ejercicios Propuestos</span>
-                    <span class="sub">Retos publicados por el profesor</span>
-                </div>
-                <div class="reto-opcion" onclick="retoElegirTest()">
-                    <span class="icono">📝</span>
-                    <span class="titulo">Generar test</span>
-                    <span class="sub">Repasa la teoría con preguntas tipo test</span>
-                </div>
-            </div>
-
-            <div class="reto-carpeta">
-                <div>
-                    <div class="reto-carpeta-titulo">📁 Carpeta de trabajo (IDE)</div>
-                    <div class="reto-carpeta-estado" id="reto-carpeta-estado">Sin vincular. Necesaria para "Recargar porcentaje".</div>
-                </div>
-                <button class="btn-ejercicio" onclick="retoVincularCarpeta()">Seleccionar carpeta</button>
-            </div>
-
-            <!-- Sub-formularios (se muestran según la opción elegida) -->
-            <div id="reto-form-crear" class="reto-subform" style="display:none;">
-                <div class="form-group">
-                    <label>Tema:</label>
-                    <select id="reto-select-tema"></select>
-                </div>
-                <div class="form-group">
-                    <label>Dificultad:</label>
-                    <select id="reto-select-dificultad">
-                        <option value="Fácil">Básico (Fácil)</option>
-                        <option value="Media" selected>Intermedio (Media)</option>
-                        <option value="Difícil">Avanzado (Examen)</option>
-                    </select>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
-                    <button class="btn-confirm" onclick="retoCrearConIa()">Generar reto</button>
-                </div>
-            </div>
-
-            <div id="reto-form-subir" class="reto-subform" style="display:none;">
-                <div class="form-group">
-                    <label>Título:</label>
-                    <input type="text" id="reto-subir-titulo" class="campo" placeholder="Ej: Lista enlazada en C">
-                </div>
-                <div class="form-group">
-                    <label>Enunciado:</label>
-                    <textarea id="reto-subir-enunciado" class="campo" rows="5" placeholder="Pega aquí el enunciado de tu ejercicio..."></textarea>
-                </div>
-                <div class="form-group separado">
-                    <label>…o sube un archivo (PDF, Markdown o TXT):</label>
-                    <input type="file" id="reto-subir-archivo" accept=".pdf,.md,.markdown,.txt,text/markdown,text/plain,application/pdf">
-                    <small>Se extraerá el enunciado del archivo. El título es opcional (si lo dejas vacío, se usa el nombre del archivo).</small>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
-                    <button class="btn-ejercicio" onclick="retoSubirArchivo()">Subir archivo</button>
-                    <button class="btn-confirm" onclick="retoSubirPropio()">Empezar con el texto</button>
-                </div>
-            </div>
-
-            <div id="reto-form-propuestos" class="reto-subform" style="display:none;">
-                <div id="reto-lista-propuestos" class="lista-propuestos">
-                    <p class="texto-vacio">Cargando…</p>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
-                </div>
-            </div>
-
-            <div id="reto-form-retomar" class="reto-subform" style="display:none;">
-                <div class="retomar-aviso">
-                    <div class="retomar-titulo">⏳ Este reto ya lo empezaste</div>
-                    <p id="reto-retomar-texto"></p>
-                    <p class="texto-muted texto-pequeno">Si lo reinicias empezarás desde cero y tu intento anterior quedará como abandonado.</p>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="retoElegirPropuestos()">Atrás</button>
-                    <button class="btn-reiniciar" id="reto-btn-reiniciar">Reiniciar</button>
-                    <button class="btn-confirm" id="reto-btn-continuar">Seguir por donde iba</button>
-                </div>
-            </div>
-
-            <div id="reto-form-test" class="reto-subform" style="display:none;">
-                <p class="modal-descripcion">
-                    La IA generará un test de teoría a partir de los apuntes oficiales del tema. Nadie mira tus resultados: es solo para que repases.
-                </p>
-                <div class="form-group">
-                    <label>Tema:</label>
-                    <select id="test-select-tema"></select>
-                </div>
-                <div class="form-group">
-                    <label>Dificultad:</label>
-                    <select id="test-select-dificultad">
-                        <option value="Fácil">Básico (Fácil)</option>
-                        <option value="Media" selected>Intermedio (Media)</option>
-                        <option value="Difícil">Avanzado (Examen)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Número de preguntas:</label>
-                    <select id="test-select-num">
-                        <option value="10" selected>10 preguntas</option>
-                        <option value="20">20 preguntas</option>
-                        <option value="30">30 preguntas</option>
-                    </select>
-                </div>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="retoVolverOpciones()">Atrás</button>
-                    <button class="btn-confirm" onclick="testGenerar()">Generar test</button>
-                </div>
-            </div>
-
-            <div id="reto-cargando" class="carga-centrada" style="display:none;">
+        <div class="modal-content-card">
+            <div id="reto-cargando" class="carga-centrada">
                 <div class="radar-spinner"></div>
                 <p id="reto-cargando-texto">Preparando tu reto…</p>
             </div>
@@ -414,35 +408,6 @@
         <div class="sub">Porcentaje de Independencia logrado</div>
         <div class="sub" id="exito-tiempo"></div>
         <button class="btn-confirm" onclick="cerrarPantallaExito()">Volver al inicio</button>
-    </div>
-
-    <!-- OVERLAY PANTALLA DE TEST DE TEORÍA -->
-    <div id="pantalla-test">
-        <div class="reto-topbar">
-            <button class="btn-salir-reto" onclick="testSalir()">← Salir</button>
-            <span class="reto-titulo" id="test-titulo">Test de teoría</span>
-            <span class="reto-cronometro" id="test-progreso">1 / 10</span>
-        </div>
-        <div class="test-cuerpo">
-            <div class="test-barra-fondo"><div class="test-barra" id="test-barra"></div></div>
-            <div class="test-tarjeta" id="test-tarjeta">
-                <div class="test-enunciado" id="test-enunciado"></div>
-                <div class="test-opciones" id="test-opciones"></div>
-                <div class="test-explicacion" id="test-explicacion" style="display:none;"></div>
-                <div class="test-acciones">
-                    <button class="btn-confirm" id="test-btn-siguiente" onclick="testSiguiente()" style="display:none;">Siguiente →</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- PANTALLA DE RESULTADO DEL TEST -->
-    <div id="pantalla-test-fin">
-        <img id="test-fin-mascota" class="test-fin-mascota" src="mascota-feliz.png" alt="Mascota">
-        <h1 id="test-fin-titulo">¡Test completado!</h1>
-        <div class="indep-final" id="test-fin-nota">0/0</div>
-        <div class="sub" id="test-fin-mensaje">Aciertos</div>
-        <button class="btn-confirm" onclick="testCerrarFin()">Volver al inicio</button>
     </div>
 
     <!-- MODAL VALIDADOR DE APUNTES -->

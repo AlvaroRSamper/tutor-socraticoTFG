@@ -5,6 +5,7 @@ import es.uma.tfg.tutor_socratico.dto.ApunteResumen;
 import es.uma.tfg.tutor_socratico.dto.RespuestaMensaje;
 import es.uma.tfg.tutor_socratico.dto.RespuestaOperacion;
 import es.uma.tfg.tutor_socratico.dto.RespuestaValidacion;
+import es.uma.tfg.tutor_socratico.servicio.ServicioModoReto;
 import es.uma.tfg.tutor_socratico.servicio.ServicioValidacionApuntes;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,11 @@ import java.util.Map;
 public class ControladorApuntes {
 
     private final ServicioValidacionApuntes servicioValidacion;
+    private final ServicioModoReto servicioModoReto;
 
-    public ControladorApuntes(ServicioValidacionApuntes servicioValidacion) {
+    public ControladorApuntes(ServicioValidacionApuntes servicioValidacion, ServicioModoReto servicioModoReto) {
         this.servicioValidacion = servicioValidacion;
+        this.servicioModoReto = servicioModoReto;
     }
 
     private String asignaturaDe(HttpSession session) {
@@ -47,6 +50,7 @@ public class ControladorApuntes {
             @RequestParam(value = "archivo", required = false) MultipartFile archivo,
             HttpSession session) {
 
+        servicioModoReto.exigirDesactivado(asignaturaDe(session));
         String contenido = extraerTexto(texto, archivo);
         if (contenido == null || contenido.isBlank()) {
             return ResponseEntity.badRequest().body(new RespuestaMensaje("Sube un archivo (PDF/TXT) o pega tus apuntes."));
@@ -63,6 +67,7 @@ public class ControladorApuntes {
             Authentication auth,
             HttpSession session) {
 
+        servicioModoReto.exigirDesactivado(asignaturaDe(session));
         if (titulo == null || titulo.isBlank()) {
             return ResponseEntity.badRequest().body(new RespuestaMensaje("Indica un título para tus apuntes."));
         }

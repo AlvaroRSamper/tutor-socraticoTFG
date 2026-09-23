@@ -18,6 +18,7 @@ import es.uma.tfg.tutor_socratico.perfil.PerfilAprendizajeServicio;
 import es.uma.tfg.tutor_socratico.persistencia.Asignatura;
 import es.uma.tfg.tutor_socratico.persistencia.AsignaturaRepositorio;
 import es.uma.tfg.tutor_socratico.servicio.ServicioConsentimiento;
+import es.uma.tfg.tutor_socratico.servicio.ServicioModoReto;
 import es.uma.tfg.tutor_socratico.servicio.ServicioRacha;
 import es.uma.tfg.tutor_socratico.servicio.ServicioRegistroConsultas;
 import es.uma.tfg.tutor_socratico.servicio.ServicioTutor;
@@ -41,16 +42,19 @@ public class ControladorTutor {
     private final ServicioRegistroConsultas servicioRegistroConsultas;
     private final ServicioRacha servicioRacha;
     private final ServicioConsentimiento servicioConsentimiento;
+    private final ServicioModoReto servicioModoReto;
 
     public ControladorTutor(ServicioTutor servicioTutor, PerfilAprendizajeServicio perfilAprendizajeServicio,
                             AsignaturaRepositorio asignaturaRepositorio, ServicioRegistroConsultas servicioRegistroConsultas,
-                            ServicioRacha servicioRacha, ServicioConsentimiento servicioConsentimiento) {
+                            ServicioRacha servicioRacha, ServicioConsentimiento servicioConsentimiento,
+                            ServicioModoReto servicioModoReto) {
         this.servicioTutor = servicioTutor;
         this.perfilAprendizajeServicio = perfilAprendizajeServicio;
         this.asignaturaRepositorio = asignaturaRepositorio;
         this.servicioRegistroConsultas = servicioRegistroConsultas;
         this.servicioRacha = servicioRacha;
         this.servicioConsentimiento = servicioConsentimiento;
+        this.servicioModoReto = servicioModoReto;
     }
 
     @GetMapping("/temas")
@@ -61,7 +65,8 @@ public class ControladorTutor {
         String titulo = (asig != null && asig.getTitulo() != null) ? asig.getTitulo() : "Tutor Socrático";
         String colorTema = (asig != null && asig.getColorTema() != null) ? asig.getColorTema() : "github-dark";
         String username = (authentication != null) ? authentication.getName() : null;
-        return new RespuestaTemas(asignaturaId, temas, titulo, colorTema, username);
+        boolean modoRetoExclusivo = (asig != null) && Boolean.TRUE.equals(asig.getModoRetoExclusivo());
+        return new RespuestaTemas(asignaturaId, temas, titulo, colorTema, username, modoRetoExclusivo);
     }
 
     @PostMapping("/racha")
@@ -85,6 +90,7 @@ public class ControladorTutor {
                                          Authentication authentication,
                                          HttpSession session) {
         String asignaturaId = asignaturaDe(session);
+        servicioModoReto.exigirDesactivado(asignaturaId);
         return servicioTutor.consultarTutor(peticion, authentication.getName(), asignaturaId);
     }
 
@@ -93,6 +99,7 @@ public class ControladorTutor {
                                                Authentication authentication,
                                                HttpSession session) {
         String asignaturaId = asignaturaDe(session);
+        servicioModoReto.exigirDesactivado(asignaturaId);
         return servicioTutor.generarEjercicio(peticion, authentication.getName(), asignaturaId);
     }
 
@@ -134,6 +141,7 @@ public class ControladorTutor {
     public RespuestaApuntes generarRepaso(@RequestBody Map<String, List<Mensaje>> cuerpo, HttpSession session) {
         List<Mensaje> historial = cuerpo.get("historial");
         String asignaturaId = asignaturaDe(session);
+        servicioModoReto.exigirDesactivado(asignaturaId);
         String md = servicioTutor.generarApuntesRepaso(historial, asignaturaId);
         return new RespuestaApuntes(md != null ? md : "");
     }

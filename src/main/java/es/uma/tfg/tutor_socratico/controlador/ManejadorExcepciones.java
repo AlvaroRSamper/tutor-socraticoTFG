@@ -1,5 +1,6 @@
 package es.uma.tfg.tutor_socratico.controlador;
 
+import es.uma.tfg.tutor_socratico.excepcion.FuncionDeshabilitadaException;
 import es.uma.tfg.tutor_socratico.excepcion.RecursoNoEncontradoException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,13 @@ public class ManejadorExcepciones {
     }
 
     
+    @ExceptionHandler(FuncionDeshabilitadaException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> manejarFuncionDeshabilitada(FuncionDeshabilitadaException e) {
+        log.warn("Funcionalidad deshabilitada por el profesor: {}", e.getMessage());
+        return Map.of("mensaje", e.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> manejarArgumentoInvalido(IllegalArgumentException e) {

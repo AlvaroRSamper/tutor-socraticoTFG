@@ -16,6 +16,60 @@ function escaparHtmlProf(str) {
     return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/* ---------------------- Modo reto exclusivo ---------------------- */
+
+function pintarEstadoModoReto(activo) {
+    const check = document.getElementById('check-modo-reto');
+    const bloque = document.getElementById('bloque-modo-reto');
+    const estado = document.getElementById('estado-modo-reto');
+    if (check) check.checked = activo;
+    if (bloque) bloque.classList.toggle('activo', activo);
+    if (estado) {
+        estado.className = activo ? 'estado-msg ok' : 'estado-msg';
+        estado.innerText = activo
+            ? '✓ Activo: tus alumnos solo ven los retos propuestos.'
+            : 'Desactivado: tus alumnos tienen disponibles todas las funcionalidades.';
+    }
+}
+
+async function cargarModoReto() {
+    try {
+        const res = await fetch('/api/profesor/modo-reto');
+        if (!res.ok) return;
+        const data = await res.json();
+        pintarEstadoModoReto(!!data.activo);
+    } catch (e) {
+        const estado = document.getElementById('estado-modo-reto');
+        if (estado) {
+            estado.className = 'estado-msg error';
+            estado.innerText = 'No se pudo consultar el estado del modo reto.';
+        }
+    }
+}
+
+async function guardarModoReto(activo) {
+    const estado = document.getElementById('estado-modo-reto');
+    if (estado) {
+        estado.className = 'estado-msg';
+        estado.innerText = 'Guardando…';
+    }
+    try {
+        const res = await fetch('/api/profesor/modo-reto?activo=' + (activo ? 'true' : 'false'), {
+            method: 'POST',
+            headers: retoCabecerasCsrf()
+        });
+        if (!res.ok) throw new Error('fallo');
+        const data = await res.json();
+        pintarEstadoModoReto(!!data.activo);
+    } catch (e) {
+        pintarEstadoModoReto(!activo);
+        if (estado) {
+            estado.className = 'estado-msg error';
+            estado.innerText = 'No se pudo guardar el cambio. Inténtalo de nuevo.';
+        }
+    }
+}
+
 /* ---------------------- Creador de ejercicios propuestos ---------------------- */
 
 let contadorHitos = 0;
@@ -179,6 +233,46 @@ function formatearTiempoProf(seg) {
     return h > 0 ? `${h}h ${mm}m` : `${mm}:${ss}`;
 }
 
+async function borrarPropuesto(ejercicioId, titulo, nAlumnos) {
+    const aviso = nAlumnos > 0
+        ? `
+
+OJO: ${nAlumnos} alumno(s) ya lo han empezado. Se borrará también su progreso y su seguimiento.`
+        : '';
+    if (!confirm(`¿Borrar el reto "${titulo}"?${aviso}
+
+Dejará de verse en el panel de tus alumnos. No se puede deshacer.`)) return;
+    const estado = document.getElementById('estado-radar');
+    if (estado) {
+        estado.className = 'estado-msg';
+        estado.innerText = 'Borrando…';
+    }
+    try {
+        const res = await fetch('/api/reto/profesor/ejercicio/' + ejercicioId, {
+            method: 'DELETE',
+            headers: retoCabecerasCsrf()
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            if (estado) {
+                estado.className = 'estado-msg error';
+                estado.innerText = data.mensaje || 'No se pudo borrar el reto.';
+            }
+            return;
+        }
+        if (estado) {
+            estado.className = 'estado-msg ok';
+            estado.innerText = data.mensaje;
+        }
+        cargarRadarDocente();
+    } catch (e) {
+        if (estado) {
+            estado.className = 'estado-msg error';
+            estado.innerText = 'Error de conexión al borrar el reto.';
+        }
+    }
+}
+
 async function cargarRadarDocente() {
     const cont = document.getElementById('radar-docente');
     cont.innerHTML = '<p class="texto-vacio">Cargando…</p>';
@@ -225,9 +319,11 @@ async function cargarRadarDocente() {
                         <span class="radar-chip">${e.nCompletados}/${e.nAlumnos} completados</span>
                         <span class="radar-chip indep">Autonomía media: ${indepMedia}</span>
                         <span class="radar-chip indep">Autoría media: ${autoriaMedia}</span>
+                        <button type="button" class="btn-borrar-reto" title="Borrar este reto">Borrar</button>
                     </span>
                 </div>
                 ${filas}`;
+            div.querySelector('.btn-borrar-reto').onclick = () => borrarPropuesto(e.ejercicioId, e.titulo, e.nAlumnos);
             cont.appendChild(div);
         });
     } catch (e) {
@@ -240,4 +336,5 @@ async function cargarRadarDocente() {
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('prop-hitos')) agregarFilaHito();
     if (document.getElementById('radar-docente')) cargarRadarDocente();
+    if (document.getElementById('check-modo-reto')) cargarModoReto();
 });

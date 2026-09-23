@@ -806,7 +806,6 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
 .modal-box h3 { margin-top: 0; }
 .modal-estrecho { max-width: 500px; }
 .modal-medio { max-width: 560px; }
-.modal-ancho { max-width: 640px; }
 .modal-amplio { max-width: 720px; }
 .modal-descripcion { color: var(--text-muted); font-size: 0.9rem; margin: 0 0 16px; }
 
@@ -866,20 +865,6 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
 /* ==========================================================================
    MODO RETO / MICROHITOS
    ========================================================================== */
-.reto-opciones { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; }
-@media (max-width: 620px) { .reto-opciones { grid-template-columns: 1fr; } }
-.reto-opcion {
-    padding: 14px;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background 120ms ease, border-color 120ms ease;
-}
-.reto-opcion:hover { background: var(--accent-soft); border-color: var(--primary); }
-.reto-opcion .icono { font-size: 1.3rem; display: block; margin-bottom: 6px; }
-.reto-opcion .titulo { font-weight: 600; font-size: 0.92rem; }
-.reto-opcion .sub { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--text-muted); }
 .reto-carpeta {
     display: flex;
     align-items: center;
@@ -893,19 +878,8 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
 .reto-carpeta-estado { font-size: 0.8rem; color: var(--text-muted); }
 .reto-carpeta-estado.vinculada { color: var(--success); font-weight: 500; }
 .reto-subform { margin-top: 18px; }
-.retomar-aviso {
-    padding: 14px 16px;
-    margin-bottom: 16px;
-    background: var(--info-bg);
-    border: 1px solid var(--border-color);
-    border-left: 2px solid var(--info);
-    border-radius: var(--radius-sm);
-}
-.retomar-aviso p { margin: 6px 0 0; font-size: 0.9rem; }
-.retomar-titulo { font-weight: 600; }
 .radar-chip.en-curso { background: var(--info-bg); color: var(--info); border-color: var(--info); }
 .radar-chip.hecho { background: var(--success-bg); color: var(--success); border-color: var(--success); }
-.lista-propuestos { max-height: 300px; overflow-y: auto; }
 
 #pantalla-reto {
     display: none;
@@ -1098,8 +1072,8 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
     z-index: 1;
 }
 
-/* --- Pantallas de éxito y fin de test --- */
-#pantalla-exito, #pantalla-test-fin {
+/* --- Pantalla de éxito del reto --- */
+#pantalla-exito {
     display: none;
     position: fixed;
     inset: 0;
@@ -1113,10 +1087,10 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
     gap: 8px;
     padding: 16px;
 }
-#pantalla-exito.activo, #pantalla-test-fin.activo { display: flex; }
+#pantalla-exito.activo { display: flex; }
 #pantalla-exito .emoji { font-size: 3.2rem; }
-#pantalla-exito h1, #pantalla-test-fin h1 { font-size: 2rem; margin: 4px 0; }
-#pantalla-exito .indep-final, #pantalla-test-fin .indep-final {
+#pantalla-exito h1 { font-size: 2rem; margin: 4px 0; }
+#pantalla-exito .indep-final {
     font-family: var(--font-titulo);
     font-size: 4rem;
     font-weight: 600;
@@ -1124,78 +1098,9 @@ pre, code, .ace_editor { background: var(--code-bg); color: var(--code-text); }
     line-height: 1;
     margin: 6px 0;
 }
-#pantalla-exito .sub, #pantalla-test-fin .sub { color: var(--text-muted); font-size: 1rem; max-width: 460px; }
-#pantalla-exito .btn-confirm, #pantalla-test-fin .btn-confirm { margin-top: 22px; }
-.test-fin-mascota { width: 130px; height: auto; margin-bottom: 4px; }
+#pantalla-exito .sub { color: var(--text-muted); font-size: 1rem; max-width: 460px; }
+#pantalla-exito .btn-confirm { margin-top: 22px; }
 
-/* --- Test de teoría --- */
-#pantalla-test {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1300;
-    background: var(--bg-body);
-    color: var(--text-main);
-    flex-direction: column;
-}
-#pantalla-test.activo { display: flex; }
-#pantalla-test .reto-topbar { flex-shrink: 0; min-height: 52px; }
-.test-cuerpo { flex: 1; min-height: 0; overflow-y: auto; padding: 24px 16px 40px; display: flex; flex-direction: column; align-items: center; }
-.test-barra-fondo { width: 100%; max-width: 720px; height: 4px; background: var(--border-color); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 20px; }
-.test-barra { height: 100%; width: 0; background: var(--primary); transition: width 300ms ease; }
-.test-tarjeta {
-    width: 100%;
-    max-width: 720px;
-    padding: 24px;
-    background: var(--bot-msg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-}
-.test-enunciado { font-family: var(--font-titulo); font-size: 1.12rem; font-weight: 500; line-height: 1.5; margin-bottom: 20px; }
-.test-opciones { display: flex; flex-direction: column; gap: 8px; }
-.test-opcion {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 14px;
-    text-align: left;
-    font-size: 0.94rem;
-    color: var(--text-main);
-    background: var(--bg-body);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: border-color 120ms ease, background 120ms ease;
-}
-.test-opcion:hover:not(.bloqueada) { border-color: var(--primary); background: var(--accent-soft); }
-.test-opcion .letra {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-pill);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: var(--border-color);
-    color: var(--text-main);
-}
-.test-opcion.bloqueada { cursor: default; }
-.test-opcion.correcta { border-color: var(--success); background: var(--success-bg); }
-.test-opcion.correcta .letra { background: var(--success); color: var(--on-accent); }
-.test-opcion.incorrecta { border-color: var(--danger); background: var(--danger-bg); }
-.test-opcion.incorrecta .letra { background: var(--danger); color: var(--on-accent); }
-.test-explicacion {
-    margin-top: 16px;
-    padding: 12px 14px;
-    font-size: 0.9rem;
-    line-height: 1.55;
-    background: var(--danger-bg);
-    border-left: 2px solid var(--danger);
-    border-radius: var(--radius-sm);
-}
-.test-acciones { display: flex; justify-content: flex-end; margin-top: 18px; }
 
 /* ==========================================================================
    RACHA, AYUDA
@@ -1427,6 +1332,17 @@ body.body-profesor { display: block; height: auto; min-height: 100vh; overflow: 
     color: var(--text-muted);
 }
 .radar-chip.indep { background: var(--accent-soft); color: var(--text-main); }
+.btn-borrar-reto {
+    font-size: 0.76rem;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.btn-borrar-reto:hover { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
 .badge-estancado {
     display: inline-block;
     padding: 1px 10px;
@@ -1503,6 +1419,762 @@ body.body-profesor { display: block; height: auto; min-height: 100vh; overflow: 
    ACCESIBILIDAD
    ========================================================================== */
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ==========================================================================
+   MODO RETO EXCLUSIVO
+   El profesor lo activa desde su panel: el alumno solo ve sus retos, y el
+   área principal pasa a ser el tablero de selección en vez del chat.
+   ========================================================================== */
+#tablero-retos { display: none; }
+
+body.modo-reto-exclusivo #tablero-retos { display: flex; }
+
+body.modo-reto-exclusivo .acciones-sidebar,
+body.modo-reto-exclusivo #titulo-temario,
+body.modo-reto-exclusivo #lista-temas,
+body.modo-reto-exclusivo #titulo-conocimientos,
+body.modo-reto-exclusivo #lista-mis-conocimientos,
+body.modo-reto-exclusivo #chat-panel,
+body.modo-reto-exclusivo #item-reiniciar-chat,
+body.modo-reto-exclusivo #sep-reiniciar-chat,
+body.modo-reto-exclusivo #btn-help-floating { display: none; }
+
+/* ---------------------- Lista de la barra lateral ---------------------- */
+.lista-retos-sidebar { flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.reto-sidebar-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 120ms ease, box-shadow 120ms ease;
+}
+.reto-sidebar-item:hover { background: var(--accent-soft); }
+.reto-sidebar-item.activo { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--primary); }
+.reto-sidebar-textos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.reto-sidebar-titulo { font-size: 0.84rem; line-height: 1.35; color: var(--text-main); }
+.reto-sidebar-meta { font-size: 0.72rem; color: var(--text-muted); }
+
+.reto-icono-estado {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.66rem;
+    line-height: 1;
+}
+.reto-icono-estado.pendiente { border: 1px solid var(--border-strong); }
+.reto-icono-estado.en-curso { border: 2px solid var(--warning); }
+.reto-icono-estado.completado { background: var(--success); color: var(--on-accent); }
+
+/* ---------------------- Tablero: contenedor y cabecera ---------------------- */
+#tablero-retos {
+    flex: 1;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: 68px 28px 20px;
+    overflow: hidden;
+}
+
+.reto-tablero-cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.reto-tablero-cab-txt { display: flex; flex-direction: column; gap: 6px; }
+.reto-tablero-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--success); }
+.reto-tablero-punto { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+.reto-tablero-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 26px; margin: 0; color: var(--text-main); }
+
+.reto-tablero-progreso { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.reto-tablero-progreso-txt { font-size: 12.5px; color: var(--text-muted); }
+.reto-tablero-barra { width: 200px; height: 6px; background: var(--user-msg); border-radius: var(--radius-pill); overflow: hidden; }
+.reto-tablero-barra-relleno { height: 100%; width: 0; background: var(--success); border-radius: var(--radius-pill); transition: width 120ms ease; }
+
+/* ---------------------- Tira "cómo funciona" ---------------------- */
+.reto-comofunciona {
+    display: flex;
+    align-items: stretch;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+.reto-comofunciona-celda {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border-color);
+    min-width: 0;
+}
+.reto-comofunciona-celda strong { color: var(--text-main); font-weight: 600; }
+.reto-comofunciona-num { font-family: var(--font-mono); font-size: 12px; color: var(--primary); flex-shrink: 0; }
+.reto-comofunciona-cerrar {
+    width: 40px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+.reto-comofunciona-cerrar:hover { background: var(--accent-soft); color: var(--text-main); }
+.reto-comofunciona-abrir {
+    display: none;
+    align-self: flex-start;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-texto);
+    font-size: 12.5px;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+.reto-comofunciona-abrir:hover { color: var(--text-main); }
+
+/* ---------------------- Filtros ---------------------- */
+.reto-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.reto-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-texto);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.reto-filtro:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--text-main); }
+.reto-filtro.activo { background: var(--text-main); border-color: var(--text-main); color: var(--bg-body); }
+.reto-filtro-num { opacity: 0.7; }
+
+/* ---------------------- Cuerpo en dos columnas ---------------------- */
+.reto-tablero-cuerpo { display: flex; gap: 20px; flex: 1; min-height: 0; }
+.reto-rejilla {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-content: start;
+    overflow-y: auto;
+    min-width: 0;
+    padding-right: 4px;
+}
+.reto-vacio-caja {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 28px;
+    text-align: center;
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+}
+
+/* ---------------------- Tarjeta de reto ---------------------- */
+.reto-tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.reto-tarjeta:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+.reto-tarjeta.activa { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.reto-tarjeta-alto { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reto-tarjeta-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 18px; line-height: 1.3; margin: 0; color: var(--text-main); }
+.reto-tarjeta-bajo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+.reto-cuenta-hitos { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+.reto-tema { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.reto-insignia {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11.5px;
+}
+.reto-insignia.pendiente { background: var(--accent-soft); color: var(--primary); }
+.reto-insignia.en-curso { background: var(--warning-bg); color: var(--warning); }
+.reto-insignia.completado { background: var(--success-bg); color: var(--success); }
+
+.reto-dificultad { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+.reto-punto-dif { width: 6px; height: 6px; border-radius: 50%; background: var(--user-msg); }
+.reto-punto-dif.n1 { background: var(--success); }
+.reto-punto-dif.n2 { background: var(--warning); }
+.reto-punto-dif.n3 { background: var(--danger); }
+.reto-dificultad .reto-punto-dif + .reto-punto-dif { margin-left: -1px; }
+
+.reto-barra-hitos { display: flex; gap: 4px; }
+.reto-segmento { flex: 1; height: 5px; border-radius: var(--radius-pill); background: var(--user-msg); }
+.reto-segmento.hecho { background: var(--warning); }
+.reto-segmento.fin { background: var(--success); }
+
+/* ---------------------- Panel de detalle ---------------------- */
+.reto-detalle { width: 350px; flex-shrink: 0; display: flex; min-height: 0; }
+.reto-detalle-caja {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.reto-detalle-alto { display: flex; flex-direction: column; gap: 9px; padding: 18px; border-bottom: 1px solid var(--border-color); }
+.reto-detalle-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reto-detalle-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 21px; line-height: 1.25; margin: 0; color: var(--text-main); }
+
+.reto-detalle-centro { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
+.reto-detalle-etiqueta {
+    display: block;
+    margin-bottom: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+.reto-detalle-vacio { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+.reto-hitos-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.reto-hito-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 9px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 0.84rem;
+}
+.reto-hito-circulo {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+.reto-hito-fila.hecho { background: var(--success-bg); }
+.reto-hito-fila.hecho .reto-hito-circulo { background: var(--success); color: var(--on-accent); }
+.reto-hito-fila.hecho .reto-hito-texto { color: var(--text-main); }
+.reto-hito-fila.actual { background: var(--accent-soft); border-color: var(--primary); }
+.reto-hito-fila.actual .reto-hito-circulo { background: var(--primary); color: var(--on-accent); }
+.reto-hito-fila.actual .reto-hito-texto { color: var(--text-main); font-weight: 600; }
+.reto-hito-fila.pendiente .reto-hito-circulo { border: 1px solid var(--border-strong); color: var(--text-muted); }
+.reto-hito-fila.pendiente .reto-hito-texto { color: var(--text-muted); }
+
+.reto-detalle-bajo { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 16px 18px; border-top: 1px solid var(--border-color); }
+.reto-btn-detalle {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: var(--on-accent);
+    font-family: var(--font-texto);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.reto-btn-detalle:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.reto-btn-detalle.secundario { background: transparent; border-color: var(--border-strong); color: var(--text-main); }
+.reto-btn-detalle.secundario:hover { background: var(--accent-soft); border-color: var(--primary); }
+.reto-detalle-pista { font-size: 11.5px; color: var(--text-muted); text-align: center; }
+
+@media (max-width: 1000px) {
+    .reto-tablero-cuerpo { flex-direction: column; overflow-y: auto; }
+    .reto-rejilla { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+    .reto-detalle { width: 100%; }
+    .reto-comofunciona { flex-wrap: wrap; }
+    .reto-comofunciona-celda { flex-basis: 50%; }
+    .reto-comofunciona-celda:nth-child(2n) { border-right: none; }
+    .reto-comofunciona-celda:nth-child(-n+2) { border-bottom: 1px solid var(--border-color); }
+    .reto-comofunciona-cerrar { width: 100%; padding: 6px; border-left: none; border-top: 1px solid var(--border-color); }
+}
+
+.interruptor { position: relative; display: inline-flex; flex-shrink: 0; }
+.interruptor input { position: absolute; opacity: 0; width: 0; height: 0; }
+.interruptor-pista {
+    width: 46px;
+    height: 26px;
+    border-radius: var(--radius-pill);
+    background: var(--input-bg);
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+.interruptor-pista::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: transform 140ms ease, background 140ms ease;
+}
+.interruptor input:checked + .interruptor-pista { background: var(--primary); border-color: var(--primary); }
+.interruptor input:checked + .interruptor-pista::after { transform: translateX(20px); background: var(--on-accent); }
+.interruptor input:focus-visible + .interruptor-pista { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.bloque-modo-reto .bloque-cabecera { flex-wrap: nowrap; align-items: flex-start; }
+.bloque-modo-reto .bloque-cabecera > div { flex: 1; min-width: 0; }
+.bloque-modo-reto.activo { border-color: var(--primary); }
+
+#modal-reto { z-index: 1250; }
+
+/* ==========================================================================
+   PANEL DE RETOS (4 apartados)
+   Pestañas arriba y, debajo, formulario a la izquierda y vista previa a la
+   derecha. Reutiliza las tarjetas y los microhitos del tablero de modo reto.
+   ========================================================================== */
+#panel-retos {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1150;
+    background: var(--bg-body);
+    color: var(--text-main);
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px 28px 16px;
+    overflow: hidden;
+}
+#panel-retos.activo { display: flex; }
+
+.panel-reto-cab { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.panel-reto-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 26px; margin: 0; }
+.panel-reto-cab-dcha { display: flex; align-items: center; gap: 16px; }
+.panel-reto-progreso { font-size: 12.5px; color: var(--text-muted); }
+.panel-reto-salir {
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-main);
+    font-family: var(--font-texto);
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.panel-reto-salir:hover { background: var(--accent-soft); border-color: var(--primary); }
+
+/* ---------------------- Pestañas ---------------------- */
+.panel-reto-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.panel-reto-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 16px;
+    text-align: left;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.panel-reto-tab:hover { background: var(--accent-soft); border-color: var(--border-strong); }
+.panel-reto-tab.activa { background: var(--accent-soft); border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.panel-reto-tab-num { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.panel-reto-tab.activa .panel-reto-tab-num { color: var(--primary); }
+.panel-reto-tab-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 15.5px; color: var(--text-main); }
+.panel-reto-tab-sub { font-size: 12px; color: var(--text-muted); line-height: 1.3; }
+
+/* ---------------------- Cuerpo ---------------------- */
+.panel-reto-cuerpo { flex: 1; min-height: 0; display: flex; }
+.panel-reto-seccion { display: none; flex: 1; gap: 20px; min-height: 0; min-width: 0; }
+.panel-reto-seccion.activa { display: flex; }
+.panel-reto-seccion-sola.activa { display: block; overflow-y: auto; }
+.panel-reto-izq { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.panel-reto-rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-content: start; }
+.panel-reto-dcha { width: 340px; flex-shrink: 0; display: flex; min-height: 0; }
+
+.panel-reto-form { display: flex; flex-direction: column; gap: 16px; align-content: start; }
+.panel-reto-izq-centrada { display: flex; justify-content: center; }
+.panel-reto-tarjeta {
+    width: 100%;
+    max-width: 560px;
+    height: fit-content;
+    padding: 26px;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+.panel-reto-campo { display: flex; flex-direction: column; gap: 8px; }
+.panel-reto-etiqueta { font-size: 0.84rem; color: var(--text-muted); }
+.panel-reto-etiqueta-mono {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-muted);
+}
+
+/* ---------------------- Botones, chips y segmentado ---------------------- */
+.panel-reto-btn {
+    align-self: flex-start;
+    padding: 12px 22px;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: var(--on-accent);
+    font-family: var(--font-texto);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.panel-reto-btn:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
+.panel-reto-btn:disabled { background: var(--user-msg); border-color: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+.panel-reto-btn-sec {
+    padding: 12px 22px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-main);
+    font-family: var(--font-texto);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.panel-reto-btn-sec:hover { background: var(--accent-soft); border-color: var(--primary); }
+.panel-reto-btn-mini { padding: 5px 12px; font-size: 0.78rem; font-weight: 500; }
+
+.panel-reto-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.panel-reto-chip {
+    padding: 5px 13px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-texto);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.panel-reto-chip:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--text-main); }
+.panel-reto-chip.activo { background: var(--text-main); border-color: var(--text-main); color: var(--bg-body); }
+
+.panel-reto-segmentado {
+    display: inline-flex;
+    align-self: flex-start;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.panel-reto-seg {
+    padding: 7px 16px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-family: var(--font-texto);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+.panel-reto-seg:last-child { border-right: none; }
+.panel-reto-seg:hover { background: var(--accent-soft); color: var(--text-main); }
+.panel-reto-seg.activo { background: var(--accent-soft); color: var(--primary); font-weight: 600; }
+
+/* ---------------------- 02 · Zona de subida ---------------------- */
+.panel-reto-soltar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 170px;
+    flex-shrink: 0;
+    padding: 16px;
+    text-align: center;
+    background: var(--bot-msg);
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+}
+.panel-reto-soltar:hover, .panel-reto-soltar.encima { border-color: var(--primary); }
+.panel-reto-soltar-icono {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+.panel-reto-soltar-txt { font-size: 0.88rem; color: var(--text-main); }
+.panel-reto-enlace { color: var(--primary); text-decoration: underline; }
+.panel-reto-soltar-sub { font-size: 11.5px; color: var(--text-muted); }
+
+.panel-reto-archivo {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+.panel-reto-archivo-icono {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--primary);
+}
+.panel-reto-archivo-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.panel-reto-archivo-nombre { font-size: 0.86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-reto-archivo-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.panel-reto-archivo-quitar {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+.panel-reto-archivo-quitar:hover { color: var(--danger); }
+
+.panel-reto-separador { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 12px; }
+.panel-reto-separador::before, .panel-reto-separador::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+
+.panel-reto-textarea {
+    height: 110px;
+    flex-shrink: 0;
+    resize: vertical;
+    padding: 12px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-family: var(--font-texto);
+    font-size: 0.88rem;
+    transition: border-color 120ms ease;
+}
+.panel-reto-textarea:focus { outline: none; border-color: var(--primary); }
+
+/* ---------------------- Panel derecho de vista previa ---------------------- */
+.panel-reto-vista-caja {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    padding: 18px;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.panel-reto-vista-caja.resultado { padding: 0; }
+.panel-reto-vista-txt { margin: 10px 0 16px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; }
+.panel-reto-fantasmas { display: flex; flex-direction: column; gap: 8px; }
+.panel-reto-fantasma { height: 38px; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); }
+.panel-reto-vista-caja.cargando .panel-reto-fantasma { animation: panelRetoPulso 1.4s ease-in-out infinite; }
+.panel-reto-vista-caja.cargando .panel-reto-fantasma:nth-child(2) { animation-delay: .2s; }
+.panel-reto-vista-caja.cargando .panel-reto-fantasma:nth-child(3) { animation-delay: .4s; }
+@keyframes panelRetoPulso { 0%, 100% { opacity: .35; } 50% { opacity: .8; } }
+
+.panel-reto-vista-alto { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-bottom: 1px solid var(--border-color); }
+.panel-reto-vista-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.panel-reto-vista-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 20px; line-height: 1.25; margin: 0; }
+.panel-reto-vista-enunciado {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.panel-reto-vista-linea { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.panel-reto-insignia-ia {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11.5px;
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+.panel-reto-vista-centro { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
+.panel-reto-vista-bajo { display: flex; gap: 10px; padding: 16px 18px; border-top: 1px solid var(--border-color); }
+.panel-reto-vista-bajo .panel-reto-btn, .panel-reto-vista-bajo .panel-reto-btn-sec { flex: 1; align-self: stretch; padding: 10px 14px; }
+.panel-reto-nota {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-main);
+}
+.panel-reto-aviso { margin: 12px 0 0; font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+
+.panel-reto-error {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    align-self: flex-start;
+    padding: 16px 18px;
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-md);
+    font-size: 0.86rem;
+    color: var(--text-main);
+}
+
+/* ---------------------- 04 · Test de teoría ---------------------- */
+.panel-reto-test { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.panel-reto-test-caja {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 26px;
+    background: var(--bot-msg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+.panel-reto-test-titulo { font-family: var(--font-titulo); font-weight: 600; font-size: 22px; margin: 0; }
+.panel-reto-test-sub { margin: 0; font-size: 0.86rem; color: var(--text-muted); }
+.panel-reto-test-pie { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.panel-reto-test-nota { font-size: 11.5px; color: var(--text-muted); }
+.panel-reto-test-error { margin: 0; font-size: 0.84rem; color: var(--danger); }
+
+.panel-reto-test-barra { display: flex; align-items: center; gap: 14px; }
+.panel-reto-test-cuenta { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+.panel-reto-test-segmentos { flex: 1; display: flex; gap: 4px; }
+.panel-reto-test-seg { flex: 1; height: 5px; border-radius: var(--radius-pill); background: var(--user-msg); }
+.panel-reto-test-seg.acierto { background: var(--success); }
+.panel-reto-test-seg.fallo { background: var(--danger); }
+.panel-reto-test-seg.actual { background: var(--primary); }
+.panel-reto-test-salir {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-texto);
+    font-size: 0.82rem;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+.panel-reto-test-salir:hover { color: var(--text-main); }
+
+.panel-reto-test-enunciado { font-family: var(--font-titulo); font-weight: 600; font-size: 20px; line-height: 1.35; margin: 0; }
+.panel-reto-opciones { display: flex; flex-direction: column; gap: 8px; }
+.panel-reto-opcion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    font-family: var(--font-texto);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.panel-reto-opcion:hover:not(.bloqueada) { background: var(--accent-soft); border-color: var(--border-strong); }
+.panel-reto-opcion-letra {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.panel-reto-opcion.elegida { background: var(--accent-soft); border-color: var(--primary); }
+.panel-reto-opcion.elegida .panel-reto-opcion-letra { border-color: var(--primary); color: var(--primary); }
+.panel-reto-opcion.bloqueada { cursor: default; }
+.panel-reto-opcion.correcta { background: var(--success-bg); border-color: var(--success); }
+.panel-reto-opcion.correcta .panel-reto-opcion-letra { background: var(--success); border-color: var(--success); color: var(--on-accent); }
+.panel-reto-opcion.incorrecta { background: var(--danger-bg); border-color: var(--danger); }
+.panel-reto-opcion.incorrecta .panel-reto-opcion-letra { background: var(--danger); border-color: var(--danger); color: var(--on-accent); }
+
+.panel-reto-feedback { padding: 14px; border-radius: var(--radius-md); font-size: 0.86rem; }
+.panel-reto-feedback.bien { background: var(--success-bg); }
+.panel-reto-feedback.mal { background: var(--danger-bg); }
+.panel-reto-feedback-titulo { display: block; margin-bottom: 5px; font-weight: 600; }
+.panel-reto-feedback.bien .panel-reto-feedback-titulo { color: var(--success); }
+.panel-reto-feedback.mal .panel-reto-feedback-titulo { color: var(--danger); }
+.panel-reto-feedback p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+.panel-reto-test-acciones { display: flex; justify-content: flex-end; gap: 10px; }
+
+.panel-reto-res-nota { font-family: var(--font-titulo); font-weight: 600; font-size: 44px; line-height: 1; color: var(--primary); }
+.panel-reto-res-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.panel-reto-res-fila { display: flex; align-items: flex-start; gap: 10px; font-size: 0.84rem; color: var(--text-muted); }
+.panel-reto-res-circulo {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 11px;
+    color: var(--on-accent);
+}
+.panel-reto-res-circulo.bien { background: var(--success); }
+.panel-reto-res-circulo.mal { background: var(--danger); }
+
+/* ---------------------- Pie ---------------------- */
+.panel-reto-pie { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.panel-reto-pie-txt { font-size: 11.5px; color: var(--text-muted); }
+
+@media (max-width: 1000px) {
+    #panel-retos { padding: 16px; }
+    .panel-reto-tabs { grid-template-columns: repeat(2, 1fr); }
+    .panel-reto-seccion.activa { flex-direction: column; overflow-y: auto; }
+    .panel-reto-izq { overflow: visible; flex: 0 0 auto; }
+    .panel-reto-rejilla { grid-template-columns: minmax(0, 1fr); }
+    .panel-reto-dcha { width: 100%; flex: 0 0 auto; }
+}
 
 @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }

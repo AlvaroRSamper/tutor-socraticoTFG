@@ -40,4 +40,6 @@ public class Asignatura {
     private String emailProfesor;
 
     private Integer diaInformeSemanal;
+
+    private Boolean modoRetoExclusivo;
 }

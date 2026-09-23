@@ -93,6 +93,7 @@ public class ServicioIngesta {
                 .sensibilidad(sensibilidadActual)
                 .emailProfesor(emailActual)
                 .diaInformeSemanal(diaActual)
+                .modoRetoExclusivo(asigActual != null && Boolean.TRUE.equals(asigActual.getModoRetoExclusivo()))
                 .build());
 
         if (archivos == null || archivos.length == 0) {

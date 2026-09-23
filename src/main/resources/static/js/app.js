@@ -14,6 +14,8 @@
 
     function aplicarConfiguracionYTemas(data) {
         if (!data) return;
+        if (data.modoRetoExclusivo) activarModoRetoExclusivo();
+        else retoCargarTablero();
         // El historial se guarda por usuario, para que cada cuenta vea SOLO su conversación
         // (evita que en un mismo navegador se arrastre el historial de otra cuenta).
         if (data.username && data.username.trim() !== "") {
@@ -171,7 +173,7 @@
             console.error("Error cargando temas", e);
         }
 
-        const guardado = localStorage.getItem(claveHistorial);
+        const guardado = modoRetoExclusivoActivo() ? null : localStorage.getItem(claveHistorial);
         if (guardado) {
             try {
                 const historialParseado = JSON.parse(guardado);

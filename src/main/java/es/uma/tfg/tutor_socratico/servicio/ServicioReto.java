@@ -32,6 +32,7 @@ import es.uma.tfg.tutor_socratico.dto.DetalleEjercicioDTO;
 import es.uma.tfg.tutor_socratico.dto.EjercicioRadarDTO;
 import es.uma.tfg.tutor_socratico.dto.RespuestaChatReto;
 import es.uma.tfg.tutor_socratico.dto.RespuestaEstadoReto;
+import es.uma.tfg.tutor_socratico.dto.RespuestaOperacion;
 import es.uma.tfg.tutor_socratico.dto.RespuestaPublicacion;
 import es.uma.tfg.tutor_socratico.dto.RetoPropuestoResumen;
 import es.uma.tfg.tutor_socratico.excepcion.RecursoNoEncontradoException;
@@ -171,6 +172,36 @@ public class ServicioReto {
         this.resolucionRepositorio = resolucionRepositorio;
     }
 
+
+    @Transactional(readOnly = true)
+    public boolean esPropuestoPublicado(Long ejercicioId, String asignaturaId) {
+        String asig = normalizarAsignatura(asignaturaId);
+        return ejercicioRepositorio.findById(ejercicioId)
+                .filter(Ejercicio::isPublicado)
+                .filter(e -> e.getOrigen() == Ejercicio.Origen.PROPUESTO)
+                .filter(e -> asig.equals(normalizarAsignatura(e.getAsignaturaId())))
+                .isPresent();
+    }
+
+    @Transactional
+    public RespuestaOperacion borrarEjercicioPropuesto(Long ejercicioId, String asignaturaId) {
+        String asig = normalizarAsignatura(asignaturaId);
+        Ejercicio ejercicio = ejercicioRepositorio.findById(ejercicioId)
+                .filter(e -> e.getOrigen() == Ejercicio.Origen.PROPUESTO)
+                .filter(e -> asig.equals(normalizarAsignatura(e.getAsignaturaId())))
+                .orElseThrow(() -> new RecursoNoEncontradoException("Ejercicio propuesto no encontrado: " + ejercicioId));
+
+        List<RegistroResolucion> resoluciones = resolucionRepositorio.findByEjercicioId(ejercicioId);
+        long alumnos = resoluciones.stream().map(RegistroResolucion::getUsername).distinct().count();
+        resolucionRepositorio.deleteAll(resoluciones);
+        ejercicioRepositorio.delete(ejercicio);
+
+        String detalle = alumnos == 0
+                ? "Ningún alumno lo había empezado."
+                : (alumnos == 1 ? "Se ha borrado también el progreso de 1 alumno."
+                                : "Se ha borrado también el progreso de " + alumnos + " alumnos.");
+        return new RespuestaOperacion(true, "Reto \"" + ejercicio.getTitulo() + "\" borrado. " + detalle);
+    }
 
     @Transactional(readOnly = true)
     public List<RetoPropuestoResumen> listarPropuestos(String username, String asignaturaId) {
